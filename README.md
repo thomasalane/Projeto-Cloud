@@ -1,6 +1,6 @@
 # Diário de Experimentos
 
-Projeto da disciplina **Projeto em Ciência de Dados IV (IBM8942, Ibmec, 2º semestre de 2026)**.
+Projeto da disciplina **Projeto em Ciência de Dados IV (Ibmec, 2º semestre de 2026)**.
 
 Um caderno online para registrar e consultar experimentos de machine learning: cada rodada de treino é guardada com o modelo, os hiperparâmetros, a métrica e o gráfico do resultado, e depois consultada por projeto, da mais recente para a mais antiga.
 
