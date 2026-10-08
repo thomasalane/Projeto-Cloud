@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------
+# Criado ANTES do primeiro commit: arquivo que entra no histórico
+# não sai por ser adicionado aqui depois.
+# ---------------------------------------------------------------
+
+# Credenciais e segredos — nunca versionar
+.env
+.env.*
+*.pem
+*.key
+.aws/
+credentials
+*credentials*.json
+
+# LocalStack (estado local do emulador)
+.localstack/
+volume/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Pacotes gerados por script (ex.: empacotamento da função)
+*.zip
+
+# Logs
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor e ferramentas locais
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.claude/settings.local.json
+.claudeignore
+
+# Material da disciplina (conteúdo da professora, só leitura local)
+material/
