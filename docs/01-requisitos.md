@@ -9,7 +9,7 @@ Versão: 1.0
 
 ### 1.1 Cenário escolhido
 
-Ideia própria da equipe, submetida à aprovação da professora. Um caderno online de experimentos de machine learning: cada rodada de treino de um modelo é registrada com o modelo usado, os hiperparâmetros, a métrica obtida e o gráfico do resultado, e depois consultada por projeto para comparar as configurações já testadas.
+Ideia própria da equipe. Um caderno online de experimentos de machine learning: cada rodada de treino de um modelo é registrada com o modelo usado, os hiperparâmetros, a métrica obtida e o gráfico do resultado, e depois consultada por projeto para comparar as configurações já testadas.
 
 A ideia responde às quatro perguntas do catálogo: o que se cadastra é um experimento; o arquivo que vem junto é o gráfico do resultado (por exemplo, valores reais contra valores previstos); o campo pelo qual se busca é o projeto; e a pergunta que a tela responde é "quais experimentos existem no projeto X, do mais recente ao mais antigo?". Responde também às três verificações de ideia própria: o recorte é um cadastro e uma consulta; um projeto acumula dezenas de rodadas, então a consulta devolve uma lista; e o gráfico é necessário, porque é ele que mostra se o número da métrica conta a história inteira — um erro médio baixo pode esconder um modelo que só repete o valor anterior.
 
@@ -196,19 +196,3 @@ A US-01 passa no S, mas é a maior das três. Se na Sprint 3 ela não couber, o 
 | O recorte do cenário   | Executar o treino dentro do sistema, registrando a métrica automaticamente ao fim de cada rodada | Eliminaria a digitação, mas exigiria rodar o código de cada usuário, com bibliotecas e tempos de execução imprevisíveis. O problema relatado não é treinar, é perder o resultado: o treino já funciona onde está, o que falta é onde guardar o que ele produz.                |
 | Quais cinco requisitos | Substituir o RF-05 (abrir um experimento pelo identificador) por ordenar a lista do projeto pelo melhor valor da métrica | "Melhor" muda com a métrica — no RMSE é o menor, na acurácia é o maior —, e ordenar exigiria declarar essa direção para cada métrica de cada projeto. Abrir o experimento completo atende a necessidade mais frequente, que é reproduzir a configuração vencedora; com poucas dezenas de rodadas, achar a melhor na lista se faz a olho. |
 | Qual caso de exceção   | Tratar só o campo obrigatório ausente, como o registro sem gráfico                         | Campo vazio salta aos olhos de quem preenche; métrica escrita errada, como "baixo", passa despercebida e estraga em silêncio toda comparação do projeto. Por isso o US-01, cenário 2, trata valor não numérico. Lista vazia e identificador inexistente também entram, porque são o primeiro uso de todo projeto novo e o erro mais comum de quem copia o identificador à mão. |
-
-## 9. Revisão cruzada recebida
-
-Revisado por: pendente — será preenchido após a revisão cruzada de 08/10  
-Data: pendente — será preenchido após a revisão cruzada de 08/10
-
-| Pergunta                                                  | Resposta da equipe revisora                                    |
-|-----------------------------------------------------------|----------------------------------------------------------------|
-| Algum requisito está escrito como decisão de arquitetura? | pendente — será preenchido após a revisão cruzada de 08/10     |
-| Algum “para que” é circular?                              | pendente — será preenchido após a revisão cruzada de 08/10     |
-| Algum cenário BDD cobre só o caminho feliz?               | pendente — será preenchido após a revisão cruzada de 08/10     |
-| Alguma história falha no S do INVEST?                     | pendente — será preenchido após a revisão cruzada de 08/10     |
-
-### 9.1 O que foi ajustado depois da revisão
-
-pendente — será preenchido após a revisão cruzada de 08/10
