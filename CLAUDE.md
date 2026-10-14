@@ -7,7 +7,7 @@
 4. **A documentação manda no código.** O que não está nos docs/ não se constrói. Cada decisão de código deve ser explicável ("por quê") na banca, e rastreável a um requisito (RF-xx) ou critério (US-xx cenário y).
 5. **Sprints 1 e 2 não têm código.** Sprint 1 = requisitos (o que o sistema faz, sem decidir tecnologia). Sprint 2 = arquitetura (com o quê).
 6. Scripts são **bash** (`#!/bin/bash`), rodam no Git Bash no Windows ou no Terminal Mac/Linux.
-7. Git configurado só no repositório (sem `--global`). Commits pequenos, mensagens em português no formato `tipo: descrição`.
+7. Git configurado só no repositório (sem `--global`).
 8. Responda e escreva documentos em **português do Brasil**.
 
 ## Estrutura do repositório
