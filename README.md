@@ -18,7 +18,7 @@ O sistema roda inteiro no computador, sobre o **LocalStack** (emulador local da 
 ## Estado atual
 
 - [x] Sprint 1 — requisitos e histórias: [`docs/01-requisitos.md`](docs/01-requisitos.md)
-- [ ] Sprint 2 — arquitetura
+- [x] Sprint 2 — arquitetura e requisitos não funcionais: [`docs/02-arquitetura.md`](docs/02-arquitetura.md)
 - [ ] Sprint 3 — armazenamento e função
 - [ ] Sprint 4 — API, página e publicação
 - [ ] Sprint 5 — validação
