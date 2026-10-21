@@ -1,0 +1,3 @@
+{
+  "body": "{\"projeto\": \"previsao-inflacao\", \"modelo\": \"ARIMA\", \"hiperparametros\": \"order=(1,1,1)\", \"metrica\": \"RMSE\", \"valor\": \"baixo\", \"grafico\": \"iVBORw0KGgoAAAANSUhEUgAAAEAAAAAgCAIAAAAt/+nTAAAAw0lEQVR42u2YQQ6EMAwD5wV8gWfukU/t/+CGUA9s3LSLkdKzW+wmdiPYX74oASUgK2BbqgKPClg/X2mDG961AuHGRha9LZ34ICfxfFKFDt/TvEbi5CF8wwlPuydc6LkawnWgwzed+Dk+JmVQgwDgsaQfFABkOV2bO8JptHkw5CTh8Q/K+77APyjvz8eQ02/8pbFHD3Pdj4nygIrTqNn01uDRGsNgemvwWIRMwmwYcpLOZ6JB/xIAGHKS8PVjqwSUgJevAyC2IFolDl9lAAAAAElFTkSuQmCC\"}"
+}

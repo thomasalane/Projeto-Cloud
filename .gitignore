@@ -46,3 +46,6 @@ desktop.ini
 
 # Material da disciplina (conteúdo da professora, só leitura local)
 material/
+
+# saidas de invocacao das funcoes
+saida*.json

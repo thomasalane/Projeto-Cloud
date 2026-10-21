@@ -1,0 +1,3 @@
+# Scripts bash sempre com fim de linha LF, inclusive no Windows.
+# Com CRLF, o bash le "\r" no fim de cada linha e o script quebra.
+*.sh text eol=lf
