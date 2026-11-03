@@ -1,0 +1,7 @@
+# Bibliotecas do dados/semear.py, que gera os experimentos de exemplo.
+# O sistema em si (infra/ e app/) nao precisa de nada disto.
+#   pip install -r dados/requisitos.txt
+numpy>=1.26
+matplotlib>=3.8
+# opcional: sem ele, a rodada "ao vivo" usa regressao linear em vez de Random Forest
+scikit-learn>=1.4

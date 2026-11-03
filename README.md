@@ -8,20 +8,21 @@ O sistema roda inteiro no computador, sobre o **LocalStack** (emulador local da 
 
 ## Estrutura
 
-| Pasta     | Conteúdo                                                        | Sprint |
-|-----------|-----------------------------------------------------------------|--------|
-| `docs/`   | Documentos do projeto (`01-requisitos.md`, `02-arquitetura.md`) | 1 e 2  |
-| `infra/`  | Scripts que criam e destroem os recursos (`deploy.sh`, `destroy.sh`, `config.sh`, `openapi.yaml`) | 3 e 4  |
-| `app/`    | Código das funções e da página                                  | 3 e 4  |
-| `eventos/` | Cargas de teste da função de gravação                          | 3      |
-| `testes/` | Testes automáticos derivados dos critérios de aceite (`executar.sh`) | 5      |
+| Pasta      | Conteúdo                                                                                       | Sprint |
+|------------|------------------------------------------------------------------------------------------------|--------|
+| `docs/`    | Documentos do projeto (`01-requisitos.md`, `02-arquitetura.md`) e o roteiro da demonstração     | 1, 2 e 4 |
+| `infra/`   | Scripts que criam e destroem os recursos (`deploy.sh`, `destroy.sh`, `config.sh`, `openapi.yaml`) | 3 e 4  |
+| `app/`     | As funções `gravar` e `consultar`, e a página em `app/site/`                                    | 3 e 4  |
+| `eventos/` | Cargas de teste da função de gravação                                                          | 3      |
+| `dados/`   | Gerador de experimentos de exemplo para a demonstração (`semear.py`)                           | 4      |
+| `testes/`  | Testes automáticos derivados dos critérios de aceite (`executar.sh`)                           | 5      |
 
 ## Estado atual
 
 - [x] Sprint 1 — requisitos e histórias: [`docs/01-requisitos.md`](docs/01-requisitos.md)
 - [x] Sprint 2 — arquitetura e requisitos não funcionais: [`docs/02-arquitetura.md`](docs/02-arquitetura.md)
 - [x] Sprint 3 — armazenamento e função: bucket, tabela, papel e função `gravar`, por script
-- [ ] Sprint 4 — API, página e publicação
+- [x] Sprint 4 — API, página e publicação: função `consultar`, `openapi.yaml` no API Gateway e página no S3
 - [ ] Sprint 5 — validação
 
 ## Como subir o ambiente
@@ -35,9 +36,50 @@ lstk start
 ./infra/deploy.sh
 ```
 
-O `deploy.sh` cria, nesta ordem: o bucket `diario-graficos`, a tabela `diario-experimentos`, o papel `diario-papel-gravar` e a função `diario-gravar`. Pode rodar quantas vezes quiser: o que já existe é reaproveitado. Se o `lstk` não estiver no PATH, os scripts usam o AWS CLI direto, apontando para `http://localhost:4566` com as credenciais `test`.
+O `deploy.sh` cria, nesta ordem: o bucket `diario-graficos`, a tabela `diario-experimentos`, os papéis `diario-papel-gravar` e `diario-papel-consultar`, as funções `diario-gravar` e `diario-consultar`, a API `diario-api` (a partir do `infra/openapi.yaml`) e a página no bucket `diario-site`; no fim, aquece as duas funções, para a primeira pessoa na página não esperar a partida a frio. Leva perto de 2 minutos. Pode rodar quantas vezes quiser: o que já existe é reaproveitado, e nenhum experimento gravado é apagado. Se o `lstk` não estiver no PATH, os scripts usam o AWS CLI direto, apontando para `http://localhost:4566` com as credenciais `test`.
 
-## Como testar a gravação
+## Como abrir a página
+
+O final do deploy imprime o endereço da API e o da página:
+
+```text
+http://diario-site.s3-website.localhost.localstack.cloud:4566/
+```
+
+Se esse endereço não abrir (algumas redes não resolvem esse nome), use o alternativo:
+
+```text
+http://localhost:4566/diario-site/index.html
+```
+
+## Experimentos de exemplo
+
+Para a lista não começar vazia, o `semear.py` treina modelos simples de previsão e registra cada rodada pela API, como a página faria. Ele também prepara, em `dados/graficos/demo/`, os arquivos da demonstração ao vivo.
+
+```bash
+pip install -r dados/requisitos.txt    # só na primeira vez
+python dados/semear.py
+```
+
+O roteiro da demonstração está em [`docs/roteiro-demo.md`](docs/roteiro-demo.md).
+
+## Como testar pela API
+
+```bash
+URL=$(cat infra/.url-api)
+
+# grava um experimento: devolve 201 e o identificador
+curl -s -X POST "$URL/experimentos" -H "Content-Type: application/json" \
+  -d '{"projeto":"previsao-inflacao","modelo":"ARIMA","hiperparametros":"order=(1,1,1)","metrica":"RMSE","valor":"0,412","grafico":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="}'
+
+# lista o projeto, do mais recente ao mais antigo: devolve 200
+curl -s "$URL/experimentos?projeto=previsao-inflacao"
+
+# consulta sem o projeto: devolve 400
+curl -s -o /dev/null -w "%{http_code}\n" "$URL/experimentos"
+```
+
+## Como testar a função direto
 
 ```bash
 source infra/config.sh

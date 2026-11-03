@@ -14,6 +14,13 @@ TABELA="${PREFIXO}-experimentos"
 PAPEL_GRAVAR="${PREFIXO}-papel-gravar"
 FUNCAO_GRAVAR="${PREFIXO}-gravar"
 
+# Sprint 4: a consulta, a porta de entrada e a pagina
+PAPEL_CONSULTAR="${PREFIXO}-papel-consultar"
+FUNCAO_CONSULTAR="${PREFIXO}-consultar"
+API_NOME="${PREFIXO}-api"
+ESTAGIO="dev"
+BUCKET_SITE="${PREFIXO}-site"
+
 # Endereco publico dos graficos (02-arquitetura, secao 9: grafico lido
 # por endereco publico). A funcao devolve "BASE_GRAFICOS/caminho".
 BASE_GRAFICOS="${ENDPOINT}/${BUCKET}"

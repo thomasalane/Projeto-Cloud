@@ -23,12 +23,17 @@ documento ja entregue:
 
 5. O registro. Toda recusa ou falha imprime data e hora, projeto e
    motivo, e nunca o conteudo enviado (RNF-04, RD-01).
+
+6. A trilha (Sprint 4). Toda resposta leva a lista do que a funcao fez
+   em cada servico, com o tempo de cada passo. E ela que a pagina usa
+   no painel "Por tras da tela" (02-arquitetura, secao 9).
 """
 import base64
 import binascii
 import json
 import os
 import secrets
+import time
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote
@@ -65,6 +70,12 @@ def resposta(codigo, corpo):
     }
 
 
+def passo(trilha, servico, acao, inicio=None, ok=True):
+    # ok=None marca o servico que nao foi tocado
+    ms = round((time.perf_counter() - inicio) * 1000, 1) if inicio else None
+    trilha.append({"servico": servico, "acao": acao, "ms": ms, "ok": ok})
+
+
 def registrar(evento, projeto, detalhe):
     # RNF-04: data e hora, projeto e motivo. Nunca o conteudo (RD-01).
     agora = datetime.now(timezone.utc).isoformat()
@@ -73,9 +84,13 @@ def registrar(evento, projeto, detalhe):
     ))
 
 
-def recusar(projeto, motivo, extra=None):
+def recusar(trilha, inicio, projeto, motivo, campos, extra=None):
+    passo(trilha, "lambda-gravar", "validação recusou: " + motivo, inicio, False)
+    passo(trilha, "s3", "não foi tocado: nada é gravado antes de validar", ok=None)
+    passo(trilha, "dynamodb", "não foi tocado", ok=None)
     registrar("recusado", projeto, "motivo={}".format(motivo))
-    corpo = {"erro": motivo}
+    passo(trilha, "cloudwatch", "recusa registrada, com projeto e motivo")
+    corpo = {"erro": motivo, "campos": campos, "trilha": trilha}
     corpo.update(extra or {})
     return resposta(400, corpo)
 
@@ -111,13 +126,19 @@ def ler_valor(bruto):
 
 
 def lambda_handler(event, context):
+    trilha = []
+    inicio = time.perf_counter()
+
+    corpo = event.get("body") or "{}"
+    if event.get("isBase64Encoded"):
+        corpo = base64.b64decode(corpo).decode("utf-8")
     try:
         # parse_float=Decimal: 0.412 vindo como numero nao passa por float
-        dados = json.loads(event.get("body") or "{}", parse_float=Decimal)
+        dados = json.loads(corpo, parse_float=Decimal)
     except json.JSONDecodeError:
-        return recusar(None, "corpo não é JSON válido")
+        dados = None
     if not isinstance(dados, dict):
-        return recusar(None, "corpo não é JSON válido")
+        return recusar(trilha, inicio, None, "corpo não é JSON válido", ["corpo"])
 
     # 02-arquitetura, secao 9: o projeto e a particao, entao
     # "Previsao-Inflacao" e "previsao-inflacao" precisam ser o mesmo
@@ -128,26 +149,29 @@ def lambda_handler(event, context):
     # RF-04: recusa e diz qual campo faltou
     faltando = [c for c in CAMPOS_OBRIGATORIOS if vazio(dados.get(c))]
     if faltando:
-        return recusar(projeto, "campos obrigatórios ausentes",
-                       {"campos": faltando})
+        return recusar(trilha, inicio, projeto,
+                       "campos obrigatórios ausentes", faltando)
 
     # RF-04 e US-01, cenario 2: "baixo" nao e numero
     valor = ler_valor(dados["valor"])
     if valor is None:
-        return recusar(projeto, "o valor da métrica precisa ser numérico",
-                       {"campo": "valor"})
+        return recusar(trilha, inicio, projeto,
+                       "o valor da métrica precisa ser numérico", ["valor"])
 
     try:
         imagem = base64.b64decode(dados["grafico"], validate=True)
     except (binascii.Error, ValueError, TypeError):
-        return recusar(projeto, "o gráfico não é base64 válido",
-                       {"campo": "grafico"})
+        return recusar(trilha, inicio, projeto,
+                       "o gráfico não é base64 válido", ["grafico"])
     if not imagem.startswith(ASSINATURA_PNG):
-        return recusar(projeto, "o gráfico precisa ser PNG",
-                       {"campo": "grafico"})
+        return recusar(trilha, inicio, projeto,
+                       "o gráfico precisa ser PNG", ["grafico"])
     if len(imagem) > LIMITE_GRAFICO_BYTES:
-        return recusar(projeto, "o gráfico passa de 2 MB",
-                       {"campo": "grafico", "limite_bytes": LIMITE_GRAFICO_BYTES})
+        return recusar(trilha, inicio, projeto, "o gráfico passa de 2 MB",
+                       ["grafico"], {"limite_bytes": LIMITE_GRAFICO_BYTES})
+
+    passo(trilha, "lambda-gravar",
+          "validação passou: campos, valor numérico, PNG de até 2 MB", inicio)
 
     # RF-01: identificador unico e data e hora a cada registro
     agora = datetime.now(timezone.utc)
@@ -158,6 +182,7 @@ def lambda_handler(event, context):
 
     # RF-02 e RNF-03: o grafico primeiro. Se nao subir, o experimento
     # nao chega a existir.
+    inicio = time.perf_counter()
     try:
         s3.put_object(
             Bucket=BUCKET,
@@ -166,11 +191,19 @@ def lambda_handler(event, context):
             ContentType="image/png",
         )
     except (BotoCoreError, ClientError) as erro:
+        passo(trilha, "s3", "put_object falhou ({})".format(type(erro).__name__),
+              inicio, False)
+        passo(trilha, "dynamodb", "não foi tocado: sem gráfico, sem experimento",
+              ok=None)
         registrar("falha", projeto,
                   "motivo=grafico nao guardado ({})".format(type(erro).__name__))
+        passo(trilha, "cloudwatch", "falha registrada")
         return resposta(503, {
-            "erro": "não foi possível guardar o gráfico; tente de novo"
+            "erro": "não foi possível guardar o gráfico; tente de novo",
+            "trilha": trilha,
         })
+    passo(trilha, "s3", "1º put_object {} ({} KB)".format(
+        chave, max(1, len(imagem) // 1024)), inicio)
 
     item = {
         "projeto": projeto,
@@ -189,23 +222,33 @@ def lambda_handler(event, context):
     # Se a tabela falhar aqui, o grafico ja guardado fica sem
     # experimento, e nao aparece em lugar nenhum (02-arquitetura,
     # secao 9): apaga-lo exigiria a permissao que o RNF-02 proibe.
+    inicio = time.perf_counter()
     try:
         tabela.put_item(
             Item=item,
             ConditionExpression="attribute_not_exists(id_experimento)",
         )
     except (BotoCoreError, ClientError) as erro:
+        passo(trilha, "dynamodb", "put_item falhou ({})".format(type(erro).__name__),
+              inicio, False)
         registrar("falha", projeto,
                   "motivo=experimento nao gravado ({})".format(type(erro).__name__))
+        passo(trilha, "cloudwatch", "falha registrada")
         return resposta(503, {
-            "erro": "não foi possível registrar o experimento; tente de novo"
+            "erro": "não foi possível registrar o experimento; tente de novo",
+            "trilha": trilha,
         })
+    passo(trilha, "dynamodb",
+          "2º put_item condicional: só grava se o identificador não existir", inicio)
 
     registrar("gravado", projeto, "id={}".format(id_experimento))
+    passo(trilha, "cloudwatch", "registro gravado")
 
     return resposta(201, {
         "id_experimento": id_experimento,
         "projeto": projeto,
         "criado_em": item["criado_em"],
+        "valor": format(valor, "f"),
         "grafico": "{}/{}".format(BASE_GRAFICOS, quote(chave)),
+        "trilha": trilha,
     })

@@ -27,6 +27,7 @@ if $AWS lambda get-function \
   $AWS lambda update-function-configuration \
     --function-name "$FUNCAO_GRAVAR" \
     --role "$ARN_PAPEL" \
+    --timeout 30 \
     --environment "$VARIAVEIS" >/dev/null
   echo "funcao atualizada: $FUNCAO_GRAVAR"
 else
@@ -36,7 +37,7 @@ else
     --handler handler.lambda_handler \
     --role "$ARN_PAPEL" \
     --zip-file "$PACOTE" \
-    --timeout 15 \
+    --timeout 30 \
     --environment "$VARIAVEIS" >/dev/null
   echo "funcao criada: $FUNCAO_GRAVAR"
 fi

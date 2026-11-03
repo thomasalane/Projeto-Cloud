@@ -1,0 +1,134 @@
+openapi: 3.0.1
+info:
+  title: API_NOME
+  description: >
+    API do Diário de Experimentos. Este arquivo é o que cria as rotas no
+    API Gateway: mudar a API é mudar este arquivo e rodar o deploy.
+    API_NOME, URI_GRAVAR e URI_CONSULTAR são trocados pelo 06-api.sh.
+  version: "1.0"
+paths:
+  /experimentos:
+    post:
+      summary: Registra um experimento (RF-01, RF-02, RF-04)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NovoExperimento"
+      responses:
+        "201":
+          description: Experimento registrado; devolve o identificador e o endereço do gráfico
+        "400":
+          description: Campo ausente ou inválido; o corpo diz qual
+        "503":
+          description: Gráfico ou experimento não puderam ser guardados; nada pela metade
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: URI_GRAVAR
+    get:
+      summary: Lista os experimentos de um projeto, do mais recente ao mais antigo (RF-03)
+      parameters:
+        - name: projeto
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limite
+          in: query
+          required: false
+          description: Quantos experimentos devolver, de 1 a 100 (padrão 100)
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista do projeto; total 0 quando o projeto não tem experimentos
+        "400":
+          description: Faltou o projeto, ou o limite não é número
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: URI_CONSULTAR
+    options:
+      summary: Responde à verificação prévia do navegador (CORS)
+      responses:
+        "200":
+          description: Cabeçalhos de CORS
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type'"
+  /experimentos/{id}:
+    get:
+      summary: Abre um experimento pelo projeto e pelo identificador (RF-05)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: projeto
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: O experimento completo, com o endereço do gráfico
+        "400":
+          description: Faltou o projeto
+        "404":
+          description: O identificador não existe naquele projeto
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: URI_CONSULTAR
+components:
+  schemas:
+    NovoExperimento:
+      type: object
+      required:
+        - projeto
+        - modelo
+        - metrica
+        - valor
+        - grafico
+      properties:
+        projeto:
+          type: string
+          example: previsao-inflacao
+        modelo:
+          type: string
+          example: ARIMA
+        hiperparametros:
+          type: string
+          description: Opcional; guardado exatamente como digitado
+          example: order=(1,1,1)
+        metrica:
+          type: string
+          example: RMSE
+        valor:
+          description: Número, com vírgula ou com ponto (0,412 ou 0.412)
+          example: "0,412"
+        grafico:
+          type: string
+          format: byte
+          description: O PNG do gráfico em base64, de até 2 MB

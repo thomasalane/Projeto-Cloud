@@ -49,3 +49,12 @@ material/
 
 # saidas de invocacao das funcoes
 saida*.json
+
+# gerados pelo deploy, nao versionados
+infra/.id-api
+infra/.url-api
+infra/openapi-pronto.yaml
+app/site/config.js
+
+# graficos gerados pelo dados/semear.py (ele os recria)
+dados/graficos/

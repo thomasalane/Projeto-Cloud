@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diário de Experimentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --papel: #F3F6FB;
+  --grade: #E2E9F3;
+  --superficie: #FFFFFF;
+  --painel: #E9EFF8;
+  --tinta: #14213D;
+  --grafite: #4F5B6E;
+  --linha: #C9D4E3;
+  --acao: #1F49B6;
+  --acao-forte: #163785;
+  --acao-texto: #FFFFFF;
+  --marca: #FFE36E;
+  --erro: #B42318;
+  --erro-fundo: #FDECEA;
+  --ok: #1C7C4A;
+  --ok-fundo: #E6F4EC;
+  --nav: #14213D;
+  --apigw: #7A4FE0;
+  --lambda: #D9700B;
+  --s3: #4F8A10;
+  --ddb: #2E6FBF;
+  --cw: #C2185B;
+  --sans: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --papel: #0D1422;
+    --grade: #16213A;
+    --superficie: #121B2D;
+    --painel: #101A2E;
+    --tinta: #E7EDF8;
+    --grafite: #A4B1C6;
+    --linha: #2B3A57;
+    --acao: #8EAEFF;
+    --acao-forte: #B5CAFF;
+    --acao-texto: #0D1422;
+    --marca: rgba(255, 227, 110, .22);
+    --erro: #FF9A8F;
+    --erro-fundo: #3A1A1A;
+    --ok: #74D3A0;
+    --ok-fundo: #12301F;
+    --nav: #C8D4EA;
+    --apigw: #A98BFF;
+    --lambda: #FF9D3D;
+    --s3: #8DC63F;
+    --ddb: #6AA8F0;
+    --cw: #F06292;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--tinta);
+  background-color: var(--papel);
+  background-image:
+    linear-gradient(var(--grade) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grade) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+:focus-visible { outline: 3px solid var(--acao); outline-offset: 2px; }
+button, input, textarea { font: inherit; color: inherit; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+
+/* ---------- topo ---------- */
+.topo {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: 16px 32px; padding: 32px clamp(16px, 4vw, 48px) 20px;
+}
+.topo h1 { margin: 0; font-size: clamp(1.9rem, 3.4vw, 2.6rem); line-height: 1.05; letter-spacing: -.025em; font-weight: 700; }
+.topo p { margin: 6px 0 0; color: var(--grafite); max-width: 56ch; }
+.status {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+  background: var(--superficie); border: 1px solid var(--linha); border-radius: 999px; font-size: .9rem;
+}
+.status .ponto { width: 10px; height: 10px; border-radius: 50%; background: var(--grafite); }
+.status[data-estado="ok"] .ponto { background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 20%, transparent); }
+.status[data-estado="erro"] .ponto { background: var(--erro); }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 24px;
+  padding: 0 clamp(16px, 4vw, 48px) 48px; align-items: start;
+}
+@media (max-width: 1020px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+main { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; overflow: hidden; }
+
+.abas { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--linha); padding: 0 12px; gap: 4px; }
+.abas button {
+  background: none; border: 0; border-bottom: 3px solid transparent; padding: 14px 12px 11px;
+  font-weight: 600; color: var(--grafite); cursor: pointer;
+}
+.abas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--acao); }
+.abas button:hover { color: var(--tinta); }
+.aba { padding: clamp(18px, 3vw, 32px); }
+.aba h2 { margin: 0 0 4px; font-size: 1.35rem; letter-spacing: -.01em; }
+.aba > .descricao { margin: 0 0 20px; color: var(--grafite); max-width: 64ch; }
+
+/* ---------- formulário ---------- */
+.aviso {
+  margin: 0 0 22px; padding: 12px 14px; border-left: 4px solid var(--acao);
+  background: var(--painel); border-radius: 0 8px 8px 0; font-size: .95rem; max-width: 72ch;
+}
+.grade-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+@media (max-width: 640px) { .grade-form { grid-template-columns: minmax(0, 1fr); } }
+.inteiro { grid-column: 1 / -1; }
+.campo label { display: block; font-weight: 600; font-size: .93rem; margin-bottom: 6px; }
+.campo label small { font-weight: 400; color: var(--grafite); }
+.campo input[type="text"], .campo textarea {
+  width: 100%; padding: 10px 12px; background: var(--papel); border: 1px solid var(--linha);
+  border-radius: 8px;
+}
+.campo textarea { font-family: var(--mono); font-size: .9rem; min-height: 64px; resize: vertical; }
+.campo input:focus, .campo textarea:focus { border-color: var(--acao); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--acao) 25%, transparent); }
+.campo [aria-invalid="true"], .soltar[aria-invalid="true"] { border-color: var(--erro); background: var(--erro-fundo); }
+.erro-campo { display: block; min-height: 1.2em; color: var(--erro); font-size: .85rem; margin-top: 4px; }
+
+.campo label.soltar {
+  display: flex; margin: 0; font-weight: 400; font-size: 1rem; align-items: center; gap: 14px; padding: 14px; cursor: pointer;
+  border: 2px dashed var(--linha); border-radius: 10px; background: var(--papel);
+}
+.soltar.arrastando { border-color: var(--acao); }
+.soltar input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.soltar:focus-within { border-color: var(--acao); }
+.soltar img { width: 96px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--linha); background: #fff; }
+.soltar .vazio-img { width: 96px; height: 56px; border-radius: 6px; border: 1px dashed var(--linha); display: grid; place-items: center; color: var(--grafite); font-size: .8rem; }
+.soltar .texto strong { display: block; }
+.soltar .texto span { color: var(--grafite); font-size: .88rem; }
+
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
+.botao {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 9px;
+  border: 1px solid var(--acao); background: var(--acao); color: var(--acao-texto);
+  font-weight: 600; cursor: pointer; text-decoration: none;
+}
+.botao:hover { background: var(--acao-forte); border-color: var(--acao-forte); }
+.botao.secundario { background: transparent; color: var(--acao); }
+.botao.secundario:hover { background: var(--painel); }
+.botao[disabled] { opacity: .6; cursor: progress; }
+
+.retorno { margin-top: 20px; padding: 16px 18px; border-radius: 10px; border: 1px solid; }
+.retorno.sucesso { background: var(--ok-fundo); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+.retorno.falha { background: var(--erro-fundo); border-color: color-mix(in srgb, var(--erro) 45%, transparent); }
+.retorno h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.retorno p { margin: 0 0 10px; }
+.id-copia { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.id-copia input { font-family: var(--mono); padding: 6px 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--superficie); min-width: 0; width: 26ch; }
+
+details.previa { margin-top: 28px; border-top: 1px solid var(--linha); padding-top: 14px; max-width: 72ch; }
+details.previa summary { cursor: pointer; font-weight: 600; }
+details.previa p { color: var(--grafite); margin: 10px 0 0; }
+.formula { font-family: var(--mono); background: var(--painel); padding: 8px 12px; border-radius: 6px; display: inline-block; margin-top: 8px; color: var(--tinta); }
+
+/* ---------- busca, lista e detalhe ---------- */
+.busca { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 14px; }
+.busca .campo { flex: 1 1 220px; }
+.busca .campo .erro-campo { display: none; }
+.atalhos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.atalho { border: 1px solid var(--linha); background: var(--papel); padding: 4px 12px; border-radius: 999px; cursor: pointer; font-size: .9rem; }
+.atalho:hover { border-color: var(--acao); }
+
+.resumo-lista { margin: 0 0 10px; color: var(--grafite); }
+.resumo-lista strong { color: var(--tinta); }
+.tabela-rolagem { overflow-x: auto; border: 1px solid var(--linha); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--linha); white-space: nowrap; }
+th { font-weight: 600; font-size: .85rem; color: var(--grafite); background: var(--papel); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; font-weight: 600; }
+tr.novo td { background: var(--marca); }
+.link-id { background: none; border: 0; padding: 0; color: var(--acao); font-family: var(--mono); font-size: .86rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+.vazio { padding: 28px; border: 2px dashed var(--linha); border-radius: 12px; text-align: center; }
+.vazio p { margin: 0 0 14px; }
+
+#detalhe, #lista { margin-top: 8px; }
+.ficha { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.ficha dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 18px; align-content: start; max-width: 640px; }
+.ficha dt { color: var(--grafite); font-size: .9rem; }
+.ficha dd { margin: 0; overflow-wrap: anywhere; }
+.ficha dd.destaque { font-size: 1.6rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ficha pre { margin: 0; font-family: var(--mono); font-size: .86rem; white-space: pre-wrap; background: var(--painel); padding: 8px 10px; border-radius: 6px; }
+.ficha figure { margin: 0; }
+.ficha figure img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--linha); background: #fff; }
+.ficha figcaption { font-size: .85rem; color: var(--grafite); margin-top: 6px; overflow-wrap: anywhere; }
+.ficha figcaption a { color: var(--acao); }
+
+/* ---------- por trás da tela ---------- */
+.bastidores { background: var(--painel); border: 1px solid var(--linha); border-radius: 14px; padding: 20px; }
+.bastidores h2 { margin: 0; font-size: 1.15rem; }
+.bastidores > p { margin: 4px 0 14px; color: var(--grafite); font-size: .9rem; }
+#mapa { width: 100%; height: auto; display: block; }
+#mapa .no rect { fill: var(--superficie); stroke: var(--linha); stroke-width: 1.5; transition: fill .25s, stroke .25s; }
+#mapa .no text { fill: var(--tinta); font-family: var(--sans); font-size: 12.5px; font-weight: 600; text-anchor: middle; }
+#mapa .no text.sub { font-size: 10.5px; font-weight: 400; fill: var(--grafite); }
+#mapa .no .faixa { stroke: none; }
+#mapa .aresta { fill: none; stroke: var(--linha); stroke-width: 2; transition: stroke .25s; }
+#mapa .aresta.ativo { stroke: var(--cor); stroke-width: 3; }
+#mapa .aresta.falhou { stroke: var(--erro); stroke-width: 3; stroke-dasharray: 5 4; }
+#mapa .no.ativo rect { fill: color-mix(in srgb, var(--cor) 18%, var(--superficie)); stroke: var(--cor); stroke-width: 2.5; }
+#mapa .no.falhou rect { fill: var(--erro-fundo); stroke: var(--erro); stroke-width: 2.5; }
+#mapa .no.pulado rect { stroke-dasharray: 4 4; stroke: var(--grafite); }
+#mapa .no.pulado text { fill: var(--grafite); }
+
+.cab-trilha { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 16px 0 8px; }
+.cab-trilha h3 { margin: 0; font-size: 1rem; white-space: nowrap; }
+.selo { font-size: .82rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+.selo.bom { background: var(--ok-fundo); color: var(--ok); }
+.selo.ruim { background: var(--erro-fundo); color: var(--erro); }
+.rota-atual { font-family: var(--mono); font-size: .82rem; color: var(--grafite); margin: 0 0 10px; overflow-wrap: anywhere; }
+.trilha { list-style: none; margin: 0; padding: 0; counter-reset: passo; }
+.trilha li {
+  counter-increment: passo; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px;
+  padding: 8px 0; border-top: 1px solid var(--linha); font-size: .88rem; opacity: .35; transition: opacity .25s;
+}
+.trilha li.visto { opacity: 1; }
+.trilha li::before {
+  content: counter(passo); width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .75rem; font-weight: 700; background: var(--cor); color: var(--superficie);
+}
+.trilha li.falhou::before { background: var(--erro); }
+.trilha li.pulado::before { background: transparent; color: var(--grafite); border: 1px dashed var(--grafite); }
+.trilha .servico { font-weight: 700; display: block; color: var(--cor); }
+.trilha li.pulado .servico { color: var(--grafite); }
+.trilha .ms { color: var(--grafite); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.trilha-vazia { color: var(--grafite); font-size: .9rem; padding: 10px 0; border-top: 1px solid var(--linha); }
+details.json { margin-top: 10px; font-size: .85rem; }
+details.json summary { cursor: pointer; color: var(--acao); }
+details.json pre { font-family: var(--mono); font-size: .78rem; background: var(--superficie); border: 1px solid var(--linha); border-radius: 8px; padding: 10px; overflow-x: auto; max-height: 260px; }
+
+.historico { list-style: none; margin: 8px 0 0; padding: 0; }
+.historico h3 { font-size: 1rem; }
+.historico button {
+  width: 100%; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 8px; text-align: left;
+  background: none; border: 0; border-top: 1px solid var(--linha); padding: 7px 2px; cursor: pointer; font-size: .82rem;
+}
+.historico button:hover { background: var(--superficie); }
+.historico .met { font-family: var(--mono); font-weight: 600; }
+.historico .cam { font-family: var(--mono); color: var(--grafite); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.historico .st.bom { color: var(--ok); font-weight: 700; }
+.historico .st.ruim { color: var(--erro); font-weight: 700; }
+.titulo-hist { margin: 20px 0 0; font-size: 1rem; }
+
+[data-servico="navegador"] { --cor: var(--nav); }
+[data-servico="apigateway"] { --cor: var(--apigw); }
+[data-servico="lambda-gravar"], [data-servico="lambda-consultar"] { --cor: var(--lambda); }
+[data-servico="s3"] { --cor: var(--s3); }
+[data-servico="dynamodb"] { --cor: var(--ddb); }
+[data-servico="cloudwatch"] { --cor: var(--cw); }
+
+.visualmente-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <h1>Diário de Experimentos</h1>
+    <p>Cada rodada de treino registrada com o modelo, os hiperparâmetros, a métrica e o gráfico, para comparar depois.</p>
+  </div>
+  <div class="status" id="status" data-estado="carregando" role="status">
+    <span class="ponto" aria-hidden="true"></span><span id="status-texto">Conectando à API…</span>
+  </div>
+</header>
+
+<div class="layout">
+<main>
+  <div class="abas" role="tablist" aria-label="Seções">
+    <button role="tab" id="tab-registrar" aria-controls="aba-registrar" aria-selected="true" data-aba="registrar">Registrar rodada</button>
+    <button role="tab" id="tab-projeto" aria-controls="aba-projeto" aria-selected="false" data-aba="projeto" tabindex="-1">Experimentos do projeto</button>
+    <button role="tab" id="tab-abrir" aria-controls="aba-abrir" aria-selected="false" data-aba="abrir" tabindex="-1">Abrir um experimento</button>
+  </div>
+
+  <!-- ===================== Registrar (US-01) ===================== -->
+  <section class="aba" id="aba-registrar" role="tabpanel" aria-labelledby="tab-registrar">
+    <h2>Registrar uma rodada de treino</h2>
+    <p class="descricao">Terminou um treino? Anote aqui o resultado e anexe o gráfico. O experimento ganha um identificador e entra no topo da lista do projeto.</p>
+    <p class="aviso"><strong>Só resultados agregados.</strong> Não anexe gráfico nem escreva hiperparâmetro que mostre nome, CPF, contato ou qualquer linha do conjunto de dados.</p>
+
+    <form id="form-registrar" novalidate>
+      <div class="grade-form">
+        <div class="campo">
+          <label for="f-projeto">Projeto</label>
+          <input type="text" id="f-projeto" name="projeto" list="lista-projetos" placeholder="previsao-inflacao" autocomplete="off" aria-describedby="e-projeto">
+          <span class="erro-campo" id="e-projeto"></span>
+        </div>
+        <div class="campo">
+          <label for="f-modelo">Modelo</label>
+          <input type="text" id="f-modelo" name="modelo" placeholder="Random Forest" autocomplete="off" aria-describedby="e-modelo">
+          <span class="erro-campo" id="e-modelo"></span>
+        </div>
+        <div class="campo inteiro">
+          <label for="f-hiperparametros">Hiperparâmetros <small>(opcional: o modelo de referência não tem)</small></label>
+          <textarea id="f-hiperparametros" name="hiperparametros" placeholder="n_estimators=200, max_depth=4" spellcheck="false"></textarea>
+          <span class="erro-campo"></span>
+        </div>
+        <div class="campo">
+          <label for="f-metrica">Métrica</label>
+          <input type="text" id="f-metrica" name="metrica" list="lista-metricas" placeholder="RMSE" autocomplete="off" aria-describedby="e-metrica">
+          <span class="erro-campo" id="e-metrica"></span>
+        </div>
+        <div class="campo">
+          <label for="f-valor">Valor da métrica <small>(vírgula ou ponto)</small></label>
+          <input type="text" id="f-valor" name="valor" inputmode="decimal" placeholder="0,412" autocomplete="off" aria-describedby="e-valor">
+          <span class="erro-campo" id="e-valor"></span>
+        </div>
+        <div class="campo inteiro">
+          <span id="r-grafico" style="display:block;font-weight:600;font-size:.93rem;margin-bottom:6px">Gráfico do resultado <small style="font-weight:400;color:var(--grafite)">(PNG de até 2 MB)</small></span>
+          <label class="soltar" id="soltar" aria-labelledby="r-grafico" aria-describedby="e-grafico">
+            <input type="file" id="f-grafico" accept="image/png,.png">
+            <span class="vazio-img" id="miniatura-vazia" aria-hidden="true">PNG</span>
+            <img id="miniatura" alt="" hidden>
+            <span class="texto"><strong id="nome-arquivo">Escolher ou arrastar o gráfico</strong><span id="tamanho-arquivo">Ex.: valores reais contra previstos</span></span>
+          </label>
+          <span class="erro-campo" id="e-grafico"></span>
+        </div>
+      </div>
+      <div class="acoes">
+        <button type="submit" class="botao" id="btn-registrar">Registrar rodada</button>
+        <button type="reset" class="botao secundario">Limpar</button>
+      </div>
+    </form>
+    <div id="retorno-registro" aria-live="polite"></div>
+
+    <details class="previa">
+      <summary>De onde vêm esses números</summary>
+      <p>O treino acontece fora do diário, no ambiente de quem treina, por exemplo em Python. O diário guarda só o resultado de cada rodada. No exemplo, os modelos tentam prever a inflação do mês seguinte a partir dos meses anteriores e são avaliados nos últimos 24 meses.</p>
+      <p>O RMSE mede o erro médio da previsão, na mesma unidade da série. Quanto menor, melhor. Um RMSE de 0,412 quer dizer que o modelo erra, em média, cerca de 0,41 ponto percentual.</p>
+      <span class="formula">RMSE = √( média de (real − previsto)² )</span>
+    </details>
+  </section>
+
+  <!-- ===================== Projeto (US-02) ===================== -->
+  <section class="aba" id="aba-projeto" role="tabpanel" aria-labelledby="tab-projeto" hidden>
+    <h2>Experimentos do projeto</h2>
+    <p class="descricao">Todas as rodadas de um projeto, da mais recente para a mais antiga, para comparar com o colega de dupla.</p>
+    <form class="busca" id="form-projeto">
+      <div class="campo">
+        <label for="b-projeto">Projeto</label>
+        <input type="text" id="b-projeto" list="lista-projetos" placeholder="previsao-inflacao" autocomplete="off">
+      </div>
+      <button type="submit" class="botao">Ver experimentos</button>
+    </form>
+    <div class="atalhos" id="atalhos-projeto"></div>
+    <div id="lista" aria-live="polite"></div>
+  </section>
+
+  <!-- ===================== Abrir (US-03) ===================== -->
+  <section class="aba" id="aba-abrir" role="tabpanel" aria-labelledby="tab-abrir" hidden>
+    <h2>Abrir um experimento</h2>
+    <p class="descricao">Informe o projeto e o identificador para ver a rodada completa: hiperparâmetros exatamente como foram digitados, o valor da métrica e o gráfico.</p>
+    <form class="busca" id="form-abrir">
+      <div class="campo">
+        <label for="d-projeto">Projeto</label>
+        <input type="text" id="d-projeto" list="lista-projetos" placeholder="previsao-inflacao" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="d-id">Identificador</label>
+        <input type="text" id="d-id" class="mono" placeholder="20261028-140312-7f3a9c" autocomplete="off" spellcheck="false">
+      </div>
+      <button type="submit" class="botao">Abrir experimento</button>
+    </form>
+    <div id="detalhe" aria-live="polite"></div>
+  </section>
+</main>
+
+<!-- ===================== Por trás da tela ===================== -->
+<aside class="bastidores" aria-labelledby="titulo-bastidores">
+  <h2 id="titulo-bastidores">Por trás da tela</h2>
+  <p>O caminho da última requisição pelos serviços da AWS, emulados no LocalStack.</p>
+
+  <svg id="mapa" viewBox="0 0 340 392" role="img" aria-label="Mapa dos serviços: navegador, API Gateway, duas funções Lambda, S3, DynamoDB e CloudWatch Logs">
+    <path class="aresta" data-aresta="api-grav" d="M135 130 V150 H77 V170" data-servico="lambda-gravar"/>
+    <path class="aresta" data-aresta="api-cons" d="M205 130 V150 H263 V170" data-servico="lambda-consultar"/>
+    <path class="aresta" data-aresta="grav-s3" d="M77 214 V262" data-servico="s3"/>
+    <path class="aresta" data-aresta="grav-ddb" d="M120 214 V238 H240 V262" data-servico="dynamodb"/>
+    <path class="aresta" data-aresta="cons-ddb" d="M263 214 V262" data-servico="dynamodb"/>
+    <path class="aresta" data-aresta="grav-cw" d="M12 192 H4 V370 H105" data-servico="cloudwatch"/>
+    <path class="aresta" data-aresta="cons-cw" d="M328 192 H336 V370 H235" data-servico="cloudwatch"/>
+    <path class="aresta" data-aresta="nav-api" d="M170 52 V86" data-servico="apigateway"/>
+
+    <g class="no" data-no="nav" data-servico="navegador"><rect x="105" y="8" width="130" height="44" rx="9"/><text x="170" y="27">Navegador</text><text class="sub" x="170" y="42">página no S3</text></g>
+    <g class="no" data-no="api" data-servico="apigateway"><rect x="105" y="86" width="130" height="44" rx="9"/><text x="170" y="105">API Gateway</text><text class="sub" x="170" y="120">estágio dev</text></g>
+    <g class="no" data-no="grav" data-servico="lambda-gravar"><rect x="12" y="170" width="130" height="44" rx="9"/><text x="77" y="189">Lambda</text><text class="sub" x="77" y="204">diario-gravar</text></g>
+    <g class="no" data-no="cons" data-servico="lambda-consultar"><rect x="198" y="170" width="130" height="44" rx="9"/><text x="263" y="189">Lambda</text><text class="sub" x="263" y="204">diario-consultar</text></g>
+    <g class="no" data-no="s3" data-servico="s3"><rect x="12" y="262" width="130" height="44" rx="9"/><text x="77" y="281">S3</text><text class="sub" x="77" y="296">diario-graficos</text></g>
+    <g class="no" data-no="ddb" data-servico="dynamodb"><rect x="198" y="262" width="130" height="44" rx="9"/><text x="263" y="281">DynamoDB</text><text class="sub" x="263" y="296">diario-experimentos</text></g>
+    <g class="no" data-no="cw" data-servico="cloudwatch"><rect x="105" y="348" width="130" height="44" rx="9"/><text x="170" y="367">CloudWatch Logs</text><text class="sub" x="170" y="382">/aws/lambda/…</text></g>
+  </svg>
+
+  <div class="cab-trilha"><h3>Última requisição</h3><span id="selo" class="selo" hidden></span></div>
+  <p class="rota-atual" id="rota-atual"></p>
+  <ol class="trilha" id="trilha"><li class="trilha-vazia" style="opacity:1;display:block">Faça uma ação na página para ver o caminho dela pela nuvem.</li></ol>
+  <details class="json" id="json" hidden><summary>Resposta completa da API (JSON)</summary><pre id="json-texto"></pre></details>
+
+  <h3 class="titulo-hist">Requisições desta sessão</h3>
+  <ul class="historico" id="historico"></ul>
+</aside>
+</div>
+
+<datalist id="lista-projetos"><option value="previsao-inflacao"><option value="previsao-cambio"></datalist>
+<datalist id="lista-metricas"><option value="RMSE"><option value="MAE"><option value="MAPE"><option value="R²"></datalist>
+
+<script>
+(() => {
+  "use strict";
+  const API = ((window.DIARIO_CONFIG && window.DIARIO_CONFIG.apiUrl) || "").replace(/\/$/, "");
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ATRASO = reduzir ? 0 : 420;
+
+  const SERVICOS = {
+    "navegador": { no: "nav", nome: "Navegador" },
+    "apigateway": { no: "api", nome: "API Gateway" },
+    "lambda-gravar": { no: "grav", nome: "Lambda diario-gravar" },
+    "lambda-consultar": { no: "cons", nome: "Lambda diario-consultar" },
+    "s3": { no: "s3", nome: "Amazon S3" },
+    "dynamodb": { no: "ddb", nome: "Amazon DynamoDB" },
+    "cloudwatch": { no: "cw", nome: "CloudWatch Logs" },
+  };
+  const TEXTO_STATUS = { 0: "sem resposta", 200: "200 OK", 201: "201 Created", 400: "400 recusado",
+                         404: "404 não encontrado", 503: "503 indisponível" };
+  const PROJETOS_EXEMPLO = ["previsao-inflacao", "previsao-cambio"];
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const virgula = (v) => String(v ?? "").replace(".", ",");
+  const dataHora = (iso) => {
+    const d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "medium" });
+  };
+  const kb = (bytes) => bytes >= 1048576
+    ? (bytes / 1048576).toFixed(1).replace(".", ",") + " MB"
+    : Math.max(1, Math.round(bytes / 1024)) + " KB";
+
+  /* ------------------------------------------------ chamada à API + trilha */
+  const historico = [];
+  let temporizadores = [];
+
+  async function chamar(metodo, caminho, rotaModelo, corpo) {
+    const lambda = metodo === "POST" ? "lambda-gravar" : "lambda-consultar";
+    const inicio = performance.now();
+    let status = 0, dados = null;
+    if (!API) {
+      dados = { erro: "O config.js não tem o endereço da API. Rode ./infra/deploy.sh." };
+    } else {
+      try {
+        const opcoes = { method: metodo };
+        // POST com JSON: antes dele o navegador manda um OPTIONS (preflight),
+        // que a rota options do openapi.yaml responde com os cabeçalhos de CORS
+        if (corpo !== undefined) { opcoes.headers = { "Content-Type": "application/json" }; opcoes.body = JSON.stringify(corpo); }
+        const r = await fetch(API + caminho, opcoes);
+        status = r.status;
+        const texto = await r.text();
+        try { dados = texto ? JSON.parse(texto) : {}; } catch { dados = { erro: texto.slice(0, 300) }; }
+      } catch {
+        dados = { erro: "Não foi possível falar com a API. Confira se o LocalStack está rodando." };
+      }
+    }
+    const ms = Math.round(performance.now() - inicio);
+    const passos = [{ servico: "navegador", acao: `${metodo} ${caminho.split("?")[0]}`, ok: status !== 0 }];
+    if (status !== 0) {
+      passos.push({ servico: "apigateway", acao: `rota ${metodo} ${rotaModelo} encaminhada para a ${SERVICOS[lambda].nome}`, ok: true });
+      passos.push(...((dados && dados.trilha) || []));
+    }
+    const req = { metodo, caminho, status, ms, passos, dados, hora: new Date() };
+    historico.unshift(req);
+    desenharHistorico();
+    mostrarTrilha(req);
+    return req;
+  }
+
+  function mostrarTrilha(req) {
+    temporizadores.forEach(clearTimeout);
+    temporizadores = [];
+    $$("#mapa .no, #mapa .aresta").forEach((el) => el.classList.remove("ativo", "falhou", "pulado"));
+
+    const bom = req.status >= 200 && req.status < 300;
+    const selo = $("#selo");
+    selo.hidden = false;
+    selo.className = "selo " + (bom ? "bom" : "ruim");
+    selo.textContent = `${TEXTO_STATUS[req.status] || req.status} em ${req.ms} ms`;
+    $("#rota-atual").textContent = `${req.metodo} ${req.caminho}`;
+
+    const lista = $("#trilha");
+    lista.innerHTML = req.passos.map((p) => {
+      const estado = p.ok === false ? "falhou" : p.ok === null ? "pulado" : "";
+      const nome = (SERVICOS[p.servico] || { nome: p.servico }).nome;
+      const ms = p.ms != null ? `${String(p.ms).replace(".", ",")} ms` : "";
+      return `<li class="${estado}" data-servico="${esc(p.servico)}"><span><span class="servico">${esc(nome)}</span>${esc(p.acao)}</span><span class="ms">${ms}</span></li>`;
+    }).join("");
+
+    const json = { ...(req.dados || {}) };
+    $("#json").hidden = false;
+    $("#json-texto").textContent = JSON.stringify(json, null, 2);
+
+    let lambdaAtual = null;
+    req.passos.forEach((p, i) => {
+      const s = SERVICOS[p.servico];
+      if (!s) return;
+      let aresta = null;
+      if (s.no === "api") aresta = "nav-api";
+      else if (s.no === "grav" || s.no === "cons") { aresta = "api-" + s.no; lambdaAtual = s.no; }
+      else if (["s3", "ddb", "cw"].includes(s.no) && lambdaAtual && !p.cliente) aresta = `${lambdaAtual}-${s.no}`;
+      const estado = p.ok === false ? "falhou" : p.ok === null ? "pulado" : "ativo";
+      const passo = () => {
+        const no = $(`#mapa .no[data-no="${s.no}"]`);
+        if (no) { no.classList.remove("ativo", "falhou", "pulado"); no.classList.add(estado); }
+        if (aresta && estado !== "pulado") $$(`#mapa .aresta[data-aresta="${aresta}"]`).forEach((a) => a.classList.add(estado));
+        const item = lista.children[i];
+        if (item) item.classList.add("visto");
+      };
+      if (ATRASO === 0) passo(); else temporizadores.push(setTimeout(passo, i * ATRASO));
+    });
+  }
+
+  function desenharHistorico() {
+    $("#historico").innerHTML = historico.slice(0, 12).map((r, i) => {
+      const bom = r.status >= 200 && r.status < 300;
+      return `<li><button type="button" data-i="${i}"><span class="met">${r.metodo}</span><span class="cam">${esc(r.caminho)}</span><span class="st ${bom ? "bom" : "ruim"}">${r.status || "—"}</span></button></li>`;
+    }).join("");
+  }
+  $("#historico").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-i]");
+    if (b) mostrarTrilha(historico[Number(b.dataset.i)]);
+  });
+
+  /* ------------------------------------------------ abas */
+  const abas = $$(".abas [role=tab]");
+  function irPara(nome) {
+    abas.forEach((t) => {
+      const ativa = t.dataset.aba === nome;
+      t.setAttribute("aria-selected", ativa);
+      t.tabIndex = ativa ? 0 : -1;
+      $("#" + t.getAttribute("aria-controls")).hidden = !ativa;
+    });
+  }
+  abas.forEach((t, i) => {
+    t.addEventListener("click", () => irPara(t.dataset.aba));
+    t.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      const prox = abas[(i + (e.key === "ArrowRight" ? 1 : abas.length - 1)) % abas.length];
+      prox.focus(); irPara(prox.dataset.aba);
+    });
+  });
+
+  /* ------------------------------------------------ registrar (US-01) */
+  const form = $("#form-registrar");
+  const entradaArquivo = $("#f-grafico");
+  const soltar = $("#soltar");
+
+  function mostrarArquivo() {
+    const arq = entradaArquivo.files[0];
+    const mini = $("#miniatura");
+    if (!arq) {
+      mini.hidden = true; $("#miniatura-vazia").hidden = false;
+      $("#nome-arquivo").textContent = "Escolher ou arrastar o gráfico";
+      $("#tamanho-arquivo").textContent = "Ex.: valores reais contra previstos";
+      return;
+    }
+    $("#nome-arquivo").textContent = arq.name;
+    $("#tamanho-arquivo").textContent = kb(arq.size);
+    if (arq.type === "image/png") {
+      mini.src = URL.createObjectURL(arq); mini.hidden = false; $("#miniatura-vazia").hidden = true;
+    } else { mini.hidden = true; $("#miniatura-vazia").hidden = false; }
+  }
+  entradaArquivo.addEventListener("change", mostrarArquivo);
+  ["dragenter", "dragover"].forEach((ev) => soltar.addEventListener(ev, (e) => { e.preventDefault(); soltar.classList.add("arrastando"); }));
+  ["dragleave", "drop"].forEach((ev) => soltar.addEventListener(ev, () => soltar.classList.remove("arrastando")));
+  soltar.addEventListener("drop", (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) { entradaArquivo.files = e.dataTransfer.files; mostrarArquivo(); }
+  });
+  form.addEventListener("reset", () => setTimeout(() => { limparErros(); mostrarArquivo(); $("#retorno-registro").innerHTML = ""; }));
+
+  const lerBase64 = (arq) => new Promise((ok, falha) => {
+    const leitor = new FileReader();
+    leitor.onload = () => ok(String(leitor.result).split(",")[1] || "");
+    leitor.onerror = () => falha(leitor.error);
+    leitor.readAsDataURL(arq);
+  });
+
+  function limparErros() {
+    $$("[aria-invalid]", form).forEach((el) => el.removeAttribute("aria-invalid"));
+    $$(".erro-campo", form).forEach((el) => (el.textContent = ""));
+  }
+  function marcarErro(campo, mensagem) {
+    const alvo = campo === "grafico" ? soltar : $("#f-" + campo);
+    if (!alvo) return;
+    alvo.setAttribute("aria-invalid", "true");
+    const msg = $("#e-" + campo);
+    if (msg) msg.textContent = mensagem;
+  }
+
+  let ultimoRegistrado = null;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    limparErros();
+    const botao = $("#btn-registrar");
+    botao.disabled = true; botao.textContent = "Registrando…";
+    const arq = entradaArquivo.files[0];
+    const corpo = {
+      projeto: $("#f-projeto").value, modelo: $("#f-modelo").value,
+      hiperparametros: $("#f-hiperparametros").value, metrica: $("#f-metrica").value,
+      valor: $("#f-valor").value, grafico: arq ? await lerBase64(arq) : "",
+    };
+    // a validação de verdade fica na função gravar (RF-04): a página só envia
+    const req = await chamar("POST", "/experimentos", "/experimentos", corpo);
+    botao.disabled = false; botao.textContent = "Registrar rodada";
+    const d = req.dados || {};
+    const area = $("#retorno-registro");
+
+    if (req.status === 201) {
+      ultimoRegistrado = d.id_experimento;
+      area.innerHTML = `<div class="retorno sucesso">
+        <h3>Rodada registrada.</h3>
+        <p>O gráfico foi guardado no S3 primeiro e, depois, o experimento no DynamoDB. Valor gravado: <strong>${esc(virgula(d.valor))}</strong>.</p>
+        <div class="id-copia"><label for="id-novo">Identificador</label><input id="id-novo" readonly value="${esc(d.id_experimento)}"><button type="button" class="botao secundario" id="copiar">Copiar</button></div>
+        <div class="acoes"><button type="button" class="botao" id="ir-lista">Ver na lista do projeto</button><button type="button" class="botao secundario" id="ir-detalhe">Abrir este experimento</button></div>
+      </div>`;
+      $("#copiar").onclick = () => copiar(d.id_experimento, $("#id-novo"), $("#copiar"));
+      $("#ir-lista").onclick = () => { irPara("projeto"); $("#b-projeto").value = d.projeto; carregarLista(d.projeto); };
+      $("#ir-detalhe").onclick = () => abrirDetalhe(d.projeto, d.id_experimento);
+      ["f-modelo", "f-hiperparametros", "f-valor"].forEach((id) => ($("#" + id).value = ""));
+      entradaArquivo.value = ""; mostrarArquivo();
+    } else if (req.status === 400) {
+      (d.campos || []).forEach((c) => marcarErro(c, c === "valor" || c === "grafico" ? d.erro : "Preencha este campo."));
+      area.innerHTML = `<div class="retorno falha" role="alert"><h3>Registro recusado pela função gravar.</h3><p>${esc(d.erro)}</p><p>Nada foi gravado: nem gráfico no S3, nem experimento no DynamoDB. A recusa ficou anotada no CloudWatch Logs.</p></div>`;
+      const primeiro = $("[aria-invalid=true]", form);
+      if (primeiro) (primeiro.querySelector("input") || primeiro).focus();
+    } else {
+      area.innerHTML = `<div class="retorno falha" role="alert"><h3>${req.status ? "A nuvem não conseguiu registrar." : "A API não respondeu."}</h3><p>${esc(d.erro || "Erro inesperado.")}</p></div>`;
+    }
+  });
+
+  function copiar(texto, campo, botao) {
+    const feito = () => { botao.textContent = "Copiado"; setTimeout(() => (botao.textContent = "Copiar"), 1600); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(texto).then(feito, () => {});
+    else { campo.select(); try { document.execCommand("copy"); feito(); } catch {} }
+  }
+
+  /* ------------------------------------------------ lista (US-02, RF-03) */
+  $("#atalhos-projeto").innerHTML = PROJETOS_EXEMPLO.map((p) => `<button type="button" class="atalho" data-p="${p}">${p}</button>`).join("")
+    + `<button type="button" class="atalho" data-p="previsao-desemprego">previsao-desemprego</button>`;
+  $("#atalhos-projeto").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-p]");
+    if (!b) return;
+    $("#b-projeto").value = b.dataset.p; carregarLista(b.dataset.p);
+  });
+  $("#form-projeto").addEventListener("submit", (e) => { e.preventDefault(); carregarLista($("#b-projeto").value); });
+
+  async function carregarLista(projeto) {
+    projeto = projeto.trim();
+    const area = $("#lista");
+    if (!projeto) { area.innerHTML = `<p class="resumo-lista">Informe um projeto para ver os experimentos.</p>`; $("#b-projeto").focus(); return; }
+    area.innerHTML = `<p class="resumo-lista">Consultando…</p>`;
+    const req = await chamar("GET", `/experimentos?projeto=${encodeURIComponent(projeto)}`, "/experimentos?projeto=", undefined);
+    const d = req.dados || {};
+    if (req.status !== 200) { area.innerHTML = `<div class="retorno falha" role="alert"><p>${esc(d.erro || "Erro na consulta.")}</p></div>`; return; }
+    if (d.total === 0) {
+      area.innerHTML = `<div class="vazio"><p>O projeto <strong>${esc(d.projeto)}</strong> ainda não tem experimentos.</p><button type="button" class="botao" id="registrar-primeiro">Registrar o primeiro</button></div>`;
+      $("#registrar-primeiro").onclick = () => { irPara("registrar"); $("#f-projeto").value = d.projeto; $("#f-modelo").focus(); };
+      return;
+    }
+    const linhas = d.experimentos.map((x) => `<tr class="${x.id_experimento === ultimoRegistrado ? "novo" : ""}">
+      <td>${esc(dataHora(x.criado_em))}</td><td>${esc(x.modelo)}</td><td>${esc(x.metrica)}</td>
+      <td class="num">${esc(virgula(x.valor))}</td>
+      <td><button type="button" class="link-id" data-id="${esc(x.id_experimento)}">${esc(x.id_experimento)}</button></td></tr>`).join("");
+    area.innerHTML = `<p class="resumo-lista"><strong>${d.total} ${d.total === 1 ? "experimento" : "experimentos"}</strong> em ${esc(d.projeto)}, do mais recente para o mais antigo.</p>
+      <div class="tabela-rolagem"><table><thead><tr><th scope="col">Registrado em</th><th scope="col">Modelo</th><th scope="col">Métrica</th><th scope="col">Valor</th><th scope="col">Identificador</th></tr></thead><tbody>${linhas}</tbody></table></div>`;
+    area.querySelectorAll(".link-id").forEach((b) => (b.onclick = () => abrirDetalhe(d.projeto, b.dataset.id)));
+  }
+
+  /* ------------------------------------------------ detalhe (US-03, RF-05) */
+  $("#form-abrir").addEventListener("submit", (e) => { e.preventDefault(); abrirDetalhe($("#d-projeto").value, $("#d-id").value); });
+
+  async function abrirDetalhe(projeto, id) {
+    irPara("abrir");
+    $("#d-projeto").value = projeto; $("#d-id").value = id;
+    const area = $("#detalhe");
+    if (!projeto.trim() || !id.trim()) { area.innerHTML = `<p class="resumo-lista">Informe o projeto e o identificador.</p>`; return; }
+    area.innerHTML = `<p class="resumo-lista">Abrindo…</p>`;
+    const req = await chamar("GET", `/experimentos/${encodeURIComponent(id.trim())}?projeto=${encodeURIComponent(projeto.trim())}`, "/experimentos/{id}?projeto=", undefined);
+    const d = req.dados || {};
+    if (req.status === 404) {
+      area.innerHTML = `<div class="retorno falha" role="alert"><h3>${esc(d.erro)}</h3><p>Confira o identificador: ele aparece na lista do projeto.</p><button type="button" class="botao secundario" id="ver-projeto">Ver a lista de ${esc(projeto.trim().toLowerCase())}</button></div>`;
+      $("#ver-projeto").onclick = () => { irPara("projeto"); $("#b-projeto").value = projeto; carregarLista(projeto); };
+      return;
+    }
+    if (req.status !== 200) { area.innerHTML = `<div class="retorno falha" role="alert"><p>${esc(d.erro || "Erro na consulta.")}</p></div>`; return; }
+    const x = d.experimento;
+    area.innerHTML = `<div class="ficha">
+      <dl>
+        <dt>Projeto</dt><dd>${esc(x.projeto)}</dd>
+        <dt>Identificador</dt><dd class="mono">${esc(x.id_experimento)}</dd>
+        <dt>Registrado em</dt><dd>${esc(dataHora(x.criado_em))}</dd>
+        <dt>Modelo</dt><dd>${esc(x.modelo)}</dd>
+        <dt>Hiperparâmetros</dt><dd>${x.hiperparametros ? `<pre>${esc(x.hiperparametros)}</pre>` : "nenhum (modelo de referência)"}</dd>
+        <dt>${esc(x.metrica)}</dt><dd class="destaque">${esc(virgula(x.valor))}</dd>
+      </dl>
+      <figure><img id="img-grafico" alt="Gráfico do experimento ${esc(x.id_experimento)}: valores reais contra previstos">
+        <figcaption>Imagem lida direto do bucket S3: <a href="${esc(x.grafico)}" target="_blank" rel="noopener">${esc(x.grafico)}</a></figcaption></figure>
+    </div>`;
+    const img = $("#img-grafico");
+    const inicio = performance.now();
+    img.onload = () => {
+      // passo extra: a imagem não passa pela API, o navegador busca no S3 (seção 2.1)
+      req.passos.push({ servico: "s3", acao: "navegador leu a imagem direto do bucket (só leitura, sem credencial)", ms: Math.round(performance.now() - inicio), ok: true, cliente: true });
+      if (historico[0] === req) mostrarTrilha(req);
+    };
+    img.onerror = () => { img.replaceWith(Object.assign(document.createElement("p"), { className: "resumo-lista", textContent: "Não foi possível carregar a imagem do S3." })); };
+    img.src = x.grafico;
+  }
+
+  /* ------------------------------------------------ saúde da API */
+  (async () => {
+    const st = $("#status"), txt = $("#status-texto");
+    if (!API) { st.dataset.estado = "erro"; txt.textContent = "config.js sem endereço da API"; return; }
+    st.title = API;
+    try {
+      const r = await fetch(`${API}/experimentos?projeto=verificacao`);
+      if (!r.ok) throw new Error();
+      st.dataset.estado = "ok"; txt.textContent = "API conectada no LocalStack";
+    } catch {
+      st.dataset.estado = "erro"; txt.textContent = "API fora do ar: suba o LocalStack";
+    }
+  })();
+})();
+</script>
+</body>
+</html>

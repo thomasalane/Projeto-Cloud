@@ -1,15 +1,20 @@
 #!/bin/bash
-# Papel da funcao de gravacao.  RNF-02, RD-02.
+# Um papel do IAM para cada funcao.  RNF-02, RD-02.
 #
-# O roteiro usa "Resource": "*". Aqui cada permissao nomeia o recurso
-# exato deste projeto, e nenhuma permite apagar ou alterar: e o que o
-# RNF-02 promete, e o que garante o RD-02 (experimento registrado nao
-# se altera nem se apaga) mesmo que o codigo tenha um defeito.
+# O roteiro usa um papel so, com "Resource": "*". Aqui cada funcao tem
+# o seu papel, cada permissao nomeia o recurso exato deste projeto, e
+# nenhuma permite apagar ou alterar: e o que o RNF-02 promete, e o que
+# garante o RD-02 (experimento registrado nao se altera nem se apaga)
+# mesmo que o codigo tenha um defeito.
 #
-# A funcao de gravacao pode, e so pode:
+# Gravacao pode, e so pode:
 #   s3:PutObject          guardar o PNG em graficos/ do bucket
 #   dynamodb:PutItem      inserir o experimento na tabela
-#   logs:*LogGroup/Stream escrever o proprio registro (RNF-04)
+#   logs                  escrever o proprio registro (RNF-04)
+# Consulta pode, e so pode:
+#   dynamodb:Query        listar a particao de um projeto (RF-03)
+#   dynamodb:GetItem      abrir um experimento pela chave (RF-05)
+#   logs                  escrever o proprio registro
 set -e
 cd "$(dirname "$0")"
 source ./config.sh
@@ -23,21 +28,33 @@ CONFIANCA='{
   }]
 }'
 
-if $AWS iam get-role --role-name "$PAPEL_GRAVAR" >/dev/null 2>&1; then
-  echo "papel ja existe: $PAPEL_GRAVAR"
-else
-  $AWS iam create-role \
-    --role-name "$PAPEL_GRAVAR" \
-    --assume-role-policy-document "$CONFIANCA" >/dev/null
-  echo "papel criado: $PAPEL_GRAVAR"
-fi
-
 CONTA=$($AWS sts get-caller-identity --query Account --output text)
 ARN_TABELA="arn:aws:dynamodb:${REGIAO}:${CONTA}:table/${TABELA}"
 ARN_GRAFICOS="arn:aws:s3:::${BUCKET}/graficos/*"
-ARN_LOGS="arn:aws:logs:${REGIAO}:${CONTA}:log-group:/aws/lambda/${FUNCAO_GRAVAR}:*"
 
-PERMISSOES='{
+arn_logs() {
+  echo "arn:aws:logs:${REGIAO}:${CONTA}:log-group:/aws/lambda/$1:*"
+}
+
+# Uso: criar_papel <papel> <nome da politica> <documento da politica>
+criar_papel() {
+  local papel="$1" politica="$2" documento="$3"
+  if $AWS iam get-role --role-name "$papel" >/dev/null 2>&1; then
+    echo "papel ja existe: $papel"
+  else
+    $AWS iam create-role \
+      --role-name "$papel" \
+      --assume-role-policy-document "$CONFIANCA" >/dev/null
+    echo "papel criado: $papel"
+  fi
+  $AWS iam put-role-policy \
+    --role-name "$papel" \
+    --policy-name "$politica" \
+    --policy-document "$documento"
+  echo "politica anexada ao papel $papel"
+}
+
+GRAVAR='{
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -64,13 +81,36 @@ PERMISSOES='{
     }
   ]
 }'
-PERMISSOES="${PERMISSOES//ARN_GRAFICOS/$ARN_GRAFICOS}"
-PERMISSOES="${PERMISSOES//ARN_TABELA/$ARN_TABELA}"
-PERMISSOES="${PERMISSOES//ARN_LOGS/$ARN_LOGS}"
+GRAVAR="${GRAVAR//ARN_GRAFICOS/$ARN_GRAFICOS}"
+GRAVAR="${GRAVAR//ARN_TABELA/$ARN_TABELA}"
+GRAVAR="${GRAVAR//ARN_LOGS/$(arn_logs "$FUNCAO_GRAVAR")}"
 
-$AWS iam put-role-policy \
-  --role-name "$PAPEL_GRAVAR" \
-  --policy-name "${PREFIXO}-politica-gravar" \
-  --policy-document "$PERMISSOES"
+CONSULTAR='{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LerExperimentos",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Query",
+        "dynamodb:GetItem"
+      ],
+      "Resource": "ARN_TABELA"
+    },
+    {
+      "Sid": "EscreverRegistro",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "ARN_LOGS"
+    }
+  ]
+}'
+CONSULTAR="${CONSULTAR//ARN_TABELA/$ARN_TABELA}"
+CONSULTAR="${CONSULTAR//ARN_LOGS/$(arn_logs "$FUNCAO_CONSULTAR")}"
 
-echo "politica anexada ao papel $PAPEL_GRAVAR"
+criar_papel "$PAPEL_GRAVAR" "${PREFIXO}-politica-gravar" "$GRAVAR"
+criar_papel "$PAPEL_CONSULTAR" "${PREFIXO}-politica-consultar" "$CONSULTAR"
