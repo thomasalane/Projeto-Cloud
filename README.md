@@ -61,6 +61,13 @@ pip install -r dados/requisitos.txt    # só na primeira vez
 python dados/semear.py
 ```
 
+No Mac com Python do Homebrew não há `python` e o `pip` recusa instalar fora de um ambiente virtual. Crie um antes, na pasta do projeto (o `.venv/` não é versionado):
+
+```bash
+python3 -m venv .venv                  # só na primeira vez
+source .venv/bin/activate              # em cada terminal novo; depois disso, os comandos acima funcionam
+```
+
 O roteiro da demonstração está em [`docs/roteiro-demo.md`](docs/roteiro-demo.md).
 
 ## Como testar pela API

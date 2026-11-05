@@ -8,7 +8,7 @@ Tudo no **Git Bash**, na pasta do projeto. Aqui nada da aplicação fica no ar: 
 
 1. Abra o Docker Desktop e espere ele ficar pronto.
 2. Suba o LocalStack: `lstk start`
-3. Na primeira vez em cada computador, instale as bibliotecas do gerador de exemplos: `pip install -r dados/requisitos.txt`
+3. Na primeira vez em cada computador, instale as bibliotecas do gerador de exemplos: `pip install -r dados/requisitos.txt`. No Mac, antes, crie e ative o ambiente virtual (`python3 -m venv .venv` e `source .venv/bin/activate`); a ativação vale para cada terminal novo.
 4. Ensaie uma vez, para descobrir problema enquanto dá tempo: `./testes/executar.sh --do-zero`
 5. Derrube tudo: `./infra/destroy.sh`
 6. Prepare os arquivos da rodada ao vivo, sem registrar nada: `python dados/semear.py --so-graficos`. Abra `dados/graficos/demo/LEIA-ME-demo.txt`: ele tem os valores que você vai digitar.
@@ -65,6 +65,8 @@ Se a página mostrar "API conectada no LocalStack" no canto, está tudo certo.
 **Faça:** clique em **Ver na lista do projeto**.
 
 **Diga:** "A rodada nova aparece no topo, destacada. Não precisei ordenar nada no código: foi a chave de ordenação do DynamoDB."
+
+Se perguntarem por que o `0,350` digitado aparece como `0,35`: o DynamoDB guarda o valor como número, e zero à direita não muda o número. Nada foi arredondado.
 
 ## 7. Abrir o experimento (1 min) · RF-05, US-03
 

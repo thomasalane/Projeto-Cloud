@@ -5,13 +5,13 @@ Cenário oficial escolhido: Ideia própria da equipe (Diário de Experimentos)
 Data: 05/11/2026  
 Versão: 1.0
 
-Os números deste documento vêm de execuções reais no LocalStack (edição `bigdata-pro`, versão 2026.10.0), em um notebook Windows 11 pelo Git Bash, em 05/11/2026. As saídas completas estão em `docs/evidencias/`: `executar-do-zero-2026-11-05.txt`, a suíte inteira a partir do ambiente derrubado, e `medir-2026-11-05.txt`, as medições do RNF-01. As capturas de tela de cada sprint estão nos documentos de evidência da mesma pasta (E3.1 a E5.5).
+Os números deste documento vêm de execuções reais no LocalStack (edição `bigdata-pro`, versão 2026.10.0), em um notebook Windows 11 pelo Git Bash, em 05/11/2026. As saídas completas estão em `docs/evidencias/`: `executar-do-zero-2026-11-05.txt`, a suíte inteira a partir do ambiente derrubado, e `medir-2026-11-05.txt`, as medições do RNF-01. A mesma suíte foi repetida no mesmo dia em um MacBook (Apple A18 Pro, 8 GB, macOS 27.0.1, LocalStack `pro` 2026.10.6), com as saídas em `executar-do-zero-mac-2026-11-05.txt` e `medir-mac-2026-11-05.txt`; as diferenças estão nas seções 1 e 3.1. As capturas de tela de cada sprint estão nos documentos de evidência da mesma pasta (E3.1 a E5.5).
 
 ## 1. Reconstrução do ambiente
 
 | Item | Resposta |
 |------|----------|
-| Tempo do `deploy.sh` a partir do ambiente vazio | 110 s e 119 s, em duas reconstruções do zero (`[DEMO] deploy.sh sobe tudo do zero`) |
+| Tempo do `deploy.sh` a partir do ambiente vazio | 110 s e 119 s, em duas reconstruções do zero no notebook Windows, e 19 s no MacBook (`[DEMO] deploy.sh sobe tudo do zero`) |
 | Foi necessário algum comando fora do script | Não. Antes do deploy, só se sobe o emulador (`lstk start`), que não cria nenhum recurso do projeto |
 | Se sim, qual e por quê | Não se aplica: nenhum recurso foi criado fora de `infra/` |
 
@@ -79,7 +79,7 @@ passaram: 95   falharam: 1   pulados: 0
 ============================================
 ```
 
-A única falha da rodada é a medição do RNF-01, explicada na seção 3.
+A única falha da rodada é a medição do RNF-01, explicada na seção 3. Na rodada do MacBook, as 96 verificações passaram: `passaram: 96   falharam: 0   pulados: 0`.
 
 ### 2.2 Cenários não verificáveis por script
 
@@ -91,7 +91,7 @@ O RD-01 diz que o gráfico não pode conter dado pessoal. Nenhum script sabe o q
 
 | ID     | Valor declarado na Sprint 2 | Método | Valor obtido | Resultado |
 |--------|-----------------------------|--------|--------------|-----------|
-| RNF-01 | p95 < 1.000 ms, com 100 experimentos no projeto e 30 requisições seguidas | medição (`testes/medir.sh`) | p95 de 335 ms e 286 ms nas medições sozinhas, e 289 ms em uma sondagem de 60 chamadas; 2.854 ms e 1.839 ms nas medições feitas dentro da suíte completa | cumprido em parte |
+| RNF-01 | p95 < 1.000 ms, com 100 experimentos no projeto e 30 requisições seguidas | medição (`testes/medir.sh`) | p95 de 335 ms e 286 ms nas medições sozinhas, e 289 ms em uma sondagem de 60 chamadas; 2.854 ms e 1.839 ms nas medições feitas dentro da suíte completa, todos no notebook Windows. No MacBook: 146 ms, 46 ms e 47 ms sozinhas, e 61 ms dentro da suíte | cumprido em parte |
 | RNF-02 | 0 permissões de exclusão ou atualização, 0 de escrita na consulta, só recursos do projeto | inspeção das políticas (`iam get-role-policy`, `[RNF-02]`) | gravação: `s3:PutObject`, `dynamodb:PutItem` e registro; consulta: `dynamodb:Query`, `dynamodb:GetItem` e registro; 0 `Delete*` ou `Update*`; todo recurso nomeado; um papel por função | cumprido |
 | RNF-03 | 0 experimentos sem gráfico, inclusive com o bucket fora do ar | demonstração (`[RNF-03]`) | com o bucket fora do ar, 503 e 0 experimentos registrados; com o bucket de volta, 201; 0 experimentos sem gráfico nos projetos de teste | cumprido |
 | RNF-04 | toda recusa no CloudWatch Logs em até 10 s, com data e hora, projeto e motivo | medição (`[RNF-04]`) | a linha apareceu em 3 s, nas duas rodadas, com data e hora, projeto e motivo, e sem o conteúdo enviado | cumprido |
@@ -123,7 +123,9 @@ RNF-01 nao cumprido: p95 de 1839 ms, acima de 1.000 ms
 
 A mediana é a mesma nas duas, perto de 270 ms. O que muda é a cauda: de vez em quando uma chamada leva de 2 a 10 s, e com 30 amostras bastam duas dessas para o p95 passar de 1.000 ms. Para saber onde está a demora, uma sondagem de 60 chamadas comparou o tempo total de cada uma com o tempo do DynamoDB dentro da função, que vem no campo `trilha` da resposta. Nas chamadas lentas, de 2.611 ms e 1.956 ms, o DynamoDB levou 18,2 ms e 17,9 ms — o mesmo que nas rápidas, cuja mediana foi 18,8 ms. A demora não está na consulta, nem na chave de partição: está no caminho entre o API Gateway e a função dentro do emulador. Nenhuma das chamadas lentas foi partida a frio.
 
-Por isso o resultado é "cumprido em parte". O desenho que sustenta o número — `query` em uma partição só, sem `scan` (`[RNF-01] a lista e um query na particao, sem scan`) — está confirmado, e o tempo da consulta é estável em torno de 18 ms. O número de ponta a ponta no emulador oscila, e em duas de cinco medições passou do prometido.
+Por isso o resultado é "cumprido em parte". O desenho que sustenta o número — `query` em uma partição só, sem `scan` (`[RNF-01] a lista e um query na particao, sem scan`) — está confirmado, e o tempo da consulta é estável em torno de 18 ms. O número de ponta a ponta no emulador oscila, e em duas de cinco medições no notebook Windows passou do prometido.
+
+No MacBook, nenhuma das quatro medições passou de 1.000 ms: o maior p95 foi 146 ms, e a mediana ficou entre 26 ms e 45 ms. A comparação mostra que o resultado depende do ambiente, mas não separa a causa, porque mudaram ao mesmo tempo o computador, o sistema operacional e a versão do emulador. Por isso, o resultado continua "cumprido em parte": o número só vale para o ambiente em que foi medido, e a AWS real não foi medida.
 
 ### 3.2 Requisitos verificados por análise
 
@@ -140,7 +142,7 @@ O RNF-02 foi verificado por inspeção, e não por teste de bloqueio: o emulador
 | RF-03  | Lista do projeto, do mais recente ao mais antigo, com data, modelo, métrica, valor e identificador | teste automático | `[US-02/1]`, `[RF-03]`; E4.1 | cumprido |
 | RF-04  | Recusar registro incompleto ou com métrica não numérica, dizendo o campo | teste automático | `[RF-04]`, 19 verificações; `[US-01/2]` | cumprido |
 | RF-05  | Exibir um experimento completo pelo projeto e pelo identificador | teste automático | `[US-03/1]`, `[US-03/2]` | cumprido |
-| RNF-01 | Lista em menos de 1.000 ms no p95, com 100 experimentos | medição | seção 3.1; `medir-2026-11-05.txt`; E5.2 | cumprido em parte |
+| RNF-01 | Lista em menos de 1.000 ms no p95, com 100 experimentos | medição | seção 3.1; `medir-2026-11-05.txt`; `medir-mac-2026-11-05.txt`; E5.2 | cumprido em parte |
 | RNF-02 | Zero exclusão ou atualização, zero escrita na consulta, só recursos do projeto | inspeção | `[RNF-02]`; seção 3.2 | cumprido |
 | RNF-03 | Nenhum experimento sem gráfico, inclusive com o bucket fora do ar | demonstração | `[RNF-03]` | cumprido |
 | RNF-04 | Toda recusa no CloudWatch Logs em até 10 s | medição | `[RNF-04]` a linha apareceu em 3 s | cumprido |
@@ -160,13 +162,47 @@ O RNF-02 foi verificado por inspeção, e não por teste de bloqueio: o emulador
 
 Os dois "em parte" estão explicados: o RNF-01, na seção 3.1, e o RD-01, na seção 2.2.
 
+## 5. Homologação recebida
+
+Equipe que homologou: [preencher]  
+Data: [preencher]
+
+| Pergunta | Resposta |
+|----------|----------|
+| Conseguiu rodar só com o README? | [preencher] |
+| O que faltava no README? | [preencher] |
+| Os testes passaram? Quantos passaram e quantos falharam? | [preencher] |
+| Alguma linha da matriz não bateu? Qual? | [preencher] |
+| Em que ponto travou? | [preencher] |
+
+### 5.1 O que foi corrigido depois
+
+| O que a equipe apontou | O que foi corrigido | Commit |
+|------------------------|---------------------|--------|
+| [preencher] | [preencher] | [preencher] |
+
+## 6. Homologação realizada
+
+Equipe homologada: [preencher]  
+Repositório: [preencher]  
+Data: [preencher]  
+Evidência: E5.4, em `docs/evidencias/evidencias-sprint5.docx`
+
+| Pergunta | Resposta |
+|----------|----------|
+| Conseguimos rodar só com o README? | [preencher] |
+| O que faltava no README? | [preencher] |
+| Os testes passaram? Quantos passaram e quantos falharam? | [preencher] |
+| Alguma linha da matriz não bateu? Qual? | [preencher] |
+| Em que ponto travou? | [preencher] |
+
 ## 7. O que não foi cumprido
 
 Nenhum item do backlog ficou sem implementação: os doze da Sprint 2 estão no ar e testados. Ficaram de fora, como a Sprint 2 já tinha declarado, a paginação da lista além dos 100 experimentos mais recentes e a ligação entre uma correção e o experimento corrigido.
 
 | Item | Por que ficou de fora | O que seria necessário para cumprir |
 |------|-----------------------|-------------------------------------|
-| RNF-01 em todas as medições | No emulador, algumas chamadas levam de 2 a 10 s entre o API Gateway e a função, embora a consulta leve 18 ms; em duas de cinco medições, o p95 passou de 1.000 ms | Medir na AWS real, que é o ambiente para o qual o número foi escrito; no emulador, repetir a medição e registrar a distribuição, e não um número só |
+| RNF-01 em todas as medições | No emulador, no notebook Windows, algumas chamadas levam de 2 a 10 s entre o API Gateway e a função, embora a consulta leve 18 ms; em duas de cinco medições, o p95 passou de 1.000 ms. No MacBook, nenhuma das quatro passou | Medir na AWS real, que é o ambiente para o qual o número foi escrito; no emulador, repetir a medição e registrar a distribuição, e não um número só |
 | RD-01 por máquina | O sistema não tem como saber o que um gráfico mostra | Revisão humana do gráfico antes do registro, ou um classificador de imagem — os dois fora do recorte |
 | Paginação além de 100 experimentos | Declarada fora na Sprint 2: um projeto acumula dezenas de rodadas | Um parâmetro de continuação na API e na página |
 | Ligação entre correção e experimento corrigido | Declarada fora na Sprint 2 (Event Sourcing, seção 4.1) | Um campo opcional na gravação e o filtro na consulta |
@@ -192,6 +228,6 @@ Fecharia o formato da API no `openapi.yaml` antes de dividir o trabalho. Na Spri
 | Item | Resposta |
 |------|----------|
 | URL do repositório | https://github.com/thomasalane/Projeto-Cloud |
-| Número de commits | 11 |
+| Número de commits | 13 |
 | Há pelo menos um commit por sprint | Sim: estrutura e requisitos (Sprint 1), arquitetura (Sprint 2), armazenamento e função (Sprint 3), API e página (Sprint 4) e validação (Sprint 5) |
 | Endereço do site depois do deploy | `http://diario-site.s3-website.localhost.localstack.cloud:4566/`, ou `http://localhost:4566/diario-site/index.html` quando a rede não resolve esse nome |

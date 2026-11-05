@@ -1,0 +1,30 @@
+Medicoes do RNF-01 no LocalStack (pro 2026.10.6), 05/11/2026,
+MacBook com Apple A18 Pro e 8 GB, macOS 27.0.1, bash. Projeto medicao-rnf01, com 100 experimentos.
+Ambiente recem-saido de ./testes/executar.sh --do-zero (ver executar-do-zero-mac-2026-11-05.txt).
+
+# ./testes/medir.sh, primeira execucao
+experimentos no projeto: 100
+amostras:    30
+minimo (s):  0.029780
+mediana (s): 0.044916
+p95 (s):     0.146094
+maximo (s):  0.165531
+RNF-01 cumprido: p95 de 146 ms, abaixo de 1.000 ms
+
+# ./testes/medir.sh, segunda execucao
+experimentos no projeto: 100
+amostras:    30
+minimo (s):  0.022931
+mediana (s): 0.027003
+p95 (s):     0.046233
+maximo (s):  0.049310
+RNF-01 cumprido: p95 de 46 ms, abaixo de 1.000 ms
+
+# ./testes/medir.sh, terceira execucao
+experimentos no projeto: 100
+amostras:    30
+minimo (s):  0.022489
+mediana (s): 0.029365
+p95 (s):     0.047665
+maximo (s):  0.064403
+RNF-01 cumprido: p95 de 47 ms, abaixo de 1.000 ms

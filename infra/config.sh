@@ -37,6 +37,13 @@ else
   AWS="aws --endpoint-url=$ENDPOINT"
 fi
 
+# No zsh, o shell padrao do Mac, "$AWS" nao se divide em duas palavras
+# e o comando falha com "command not found: lstk aws". Isto so vale para
+# quem da source neste arquivo no zsh; os scripts rodam em bash.
+if [ -n "${ZSH_VERSION:-}" ]; then
+  setopt sh_word_split
+fi
+
 # No Git Bash do Windows, um argumento que comeca com "/" (como
 # /aws/lambda/...) seria convertido em caminho do Windows antes de
 # chegar ao AWS CLI. Isto desliga essa conversao.
