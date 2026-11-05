@@ -10,7 +10,7 @@ O sistema roda inteiro no computador, sobre o **LocalStack** (emulador local da 
 
 | Pasta      | Conteúdo                                                                                       | Sprint |
 |------------|------------------------------------------------------------------------------------------------|--------|
-| `docs/`    | Documentos do projeto (`01-requisitos.md`, `02-arquitetura.md`) e o roteiro da demonstração     | 1, 2 e 4 |
+| `docs/`    | Documentos do projeto (`01-requisitos.md`, `02-arquitetura.md`, `03-validacao.md`) e o roteiro da demonstração | 1, 2, 4 e 5 |
 | `infra/`   | Scripts que criam e destroem os recursos (`deploy.sh`, `destroy.sh`, `config.sh`, `openapi.yaml`) | 3 e 4  |
 | `app/`     | As funções `gravar` e `consultar`, e a página em `app/site/`                                    | 3 e 4  |
 | `eventos/` | Cargas de teste da função de gravação                                                          | 3      |
@@ -23,7 +23,7 @@ O sistema roda inteiro no computador, sobre o **LocalStack** (emulador local da 
 - [x] Sprint 2 — arquitetura e requisitos não funcionais: [`docs/02-arquitetura.md`](docs/02-arquitetura.md)
 - [x] Sprint 3 — armazenamento e função: bucket, tabela, papel e função `gravar`, por script
 - [x] Sprint 4 — API, página e publicação: função `consultar`, `openapi.yaml` no API Gateway e página no S3
-- [ ] Sprint 5 — validação
+- [ ] Sprint 5 — validação: testes e relatório prontos em [`docs/03-validacao.md`](docs/03-validacao.md); falta a execução no LocalStack (seção 5 do relatório)
 
 ## Como subir o ambiente
 
@@ -99,6 +99,17 @@ $AWS dynamodb scan --table-name diario-experimentos
 $AWS s3 ls s3://diario-graficos --recursive
 $AWS logs tail /aws/lambda/diario-gravar --format short
 ```
+
+## Como validar
+
+Os testes automáticos conferem os critérios de aceite e os requisitos não funcionais. Precisam de Python, sem biblioteca externa.
+
+```bash
+./testes/executar.sh            # testa o ambiente que está no ar
+./testes/executar.sh --do-zero  # derruba tudo (apaga os dados), sobe do zero e testa
+```
+
+O resultado e o que cada teste cobre estão em [`docs/03-validacao.md`](docs/03-validacao.md).
 
 ## Como derrubar
 

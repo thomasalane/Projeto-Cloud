@@ -11,7 +11,7 @@
 8. Responda e escreva documentos em **português do Brasil**.
 
 ## Estrutura do repositório
-docs/ (01-requisitos.md, 02-arquitetura.md, roteiro-demo.md), infra/ (config.sh, 01…08-*.sh, deploy.sh, destroy.sh, openapi.yaml), app/ (gravar/, consultar/, site/), eventos/ (cargas de teste da função gravar), dados/ (semear.py, gera exemplos para a demo), testes/ (executar.sh, Sprint 5), material/ (material da disciplina, somente leitura, fora do Git)
+docs/ (01-requisitos.md, 02-arquitetura.md, 03-validacao.md, roteiro-demo.md), infra/ (config.sh, 01…08-*.sh, deploy.sh, destroy.sh, openapi.yaml), app/ (gravar/, consultar/, site/), eventos/ (cargas de teste da função gravar), dados/ (semear.py, gera exemplos para a demo), testes/ (executar.sh, Sprint 5), material/ (material da disciplina, somente leitura, fora do Git)
 
 ## Calendário (datas fixas)
 S0 até 01/10 · S1 07–08/10 · S2 14–15/10 · S3 21–22/10 · S4 28–29/10 · S5 04–05/11 · Demoday 11–12/11 (12 min + 5 de perguntas, demo ao vivo a partir do ambiente derrubado: roda o deploy, sobe o site, grava e consulta).

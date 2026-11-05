@@ -58,3 +58,7 @@ app/site/config.js
 
 # graficos gerados pelo dados/semear.py (ele os recria)
 dados/graficos/
+
+# gerados pelos testes
+testes/.tmp-*/
+testes/ultima-execucao.txt

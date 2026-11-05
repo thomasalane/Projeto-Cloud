@@ -42,11 +42,12 @@ razão
 
 ```text
 requisito
-  [Segurança] As duas funções devem ter zero permissões de
-  exclusão ou de alteração, a função de consulta deve ter
-  zero permissões de escrita, e as duas só podem agir sobre a
-  tabela, o bucket de gráficos e os registros deste projeto —
-  o que se confere na política anexada ao papel de cada uma.
+  [Segurança] As duas funções devem ter zero ações de exclusão
+  ou de atualização (Delete*, Update*), a função de consulta
+  deve ter zero permissões de escrita, e as duas só podem agir
+  sobre a tabela, o bucket de gráficos e os registros deste
+  projeto — o que se confere na política anexada ao papel de
+  cada uma.
 
 serviço AWS
   AWS IAM, com um papel para cada função
@@ -56,12 +57,14 @@ pilar do Well-Architected
 
 razão
   O RD-02 diz que experimento registrado não se altera nem se
-  apaga. Se nenhuma função tem permissão para isso, nem um
-  defeito no código consegue reescrever o histórico: a regra
-  passa a ser garantida pela nuvem, e não só pelo cuidado de
-  quem programa. A função de gravação recebe arquivo vindo da
-  internet; a de consulta só precisa ler, e com papel próprio
-  uma falha nela nunca vira dado gravado.
+  apaga. Sem ação de exclusão ou de atualização no papel, nem
+  um defeito no código consegue apagar um experimento ou
+  editar seus campos. A nuvem não cobre tudo: o PutItem, que a
+  gravação precisa, substituiria um item de mesma chave, e
+  quem impede isso é a condição do put_item, no código (seção
+  9). A função de gravação recebe arquivo vindo da internet; a
+  de consulta só precisa ler, e com papel próprio uma falha
+  nela nunca vira dado gravado.
 ```
 
 ### RNF-03
@@ -265,7 +268,7 @@ A página consulta em seguida: um `GET` em `/experimentos?projeto=previsao-infla
 | Entidade    | Campo             | Tipo                                                                                            | Obrigatório                                                            |
 |-------------|-------------------|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
 | Experimento | `projeto`         | texto, chave de partição, em minúsculas                                                         | sim                                                                    |
-| Experimento | `id_experimento`  | texto, chave de ordenação: data e hora mais alguns caracteres aleatórios, como `20261021-140312-7f3a9c` | sim, gerado                                                    |
+| Experimento | `id_experimento`  | texto, chave de ordenação: data e hora mais alguns caracteres aleatórios, com microssegundos, como `20261021-140312-123456-7f3a9c` | sim, gerado                                                    |
 | Experimento | `criado_em`       | texto, data e hora em ISO 8601                                                                  | sim, gerado                                                            |
 | Experimento | `modelo`          | texto                                                                                           | sim                                                                    |
 | Experimento | `hiperparametros` | texto, guardado exatamente como digitado                                                        | não: o modelo de referência não tem hiperparâmetro (Sprint 1, seção 2) |
@@ -354,6 +357,8 @@ A ordem dentro de cada sprint segue a dependência real. O RF-02 não vem antes 
 | Lista limitada aos 100 experimentos mais recentes                           | Paginação, devolvendo o restante em páginas seguintes                                  | Um projeto acumula dezenas de rodadas, e o FURPS de Performance fala em até 100. Paginar acrescentaria um parâmetro de continuação na API e na página. Acima de 100 experimentos por projeto, a paginação passa a ser necessária.                                        |
 | Nomes dos campos: os do cenário — `projeto`, `id_experimento`, `criado_em`, `modelo`, `hiperparametros`, `metrica`, `valor` e `grafico` | Os nomes genéricos do código do roteiro da Sprint 3: `id_particao`, `descricao` e `valor` | Quem abre a tabela ou o log entende sem tradução, e os nomes são os mesmos do RF-01 e do modelo de dados (seção 6.1). Com os genéricos, seria preciso lembrar que `id_particao` quer dizer projeto. |
 | O que a função valida antes de gravar: os cinco campos obrigatórios, o valor como número finito, com vírgula ou ponto, e o gráfico como PNG em base64 de até 2 MB | Recusar valor zero ou negativo, como o código do roteiro da Sprint 3 faz | Métrica não é preço: um R² pode ser negativo, e um erro pode ser zero. O RF-04 pede só que o valor seja numérico. |
+| Sobrescrita barrada por duas camadas: o papel não tem `Delete*` nem `Update*`, e o `put_item` é condicional (`attribute_not_exists`) | Confiar só no IAM para garantir o RD-02 | O IAM não distingue inserir de substituir: quem tem `dynamodb:PutItem` pode trocar um item de mesma chave, e `s3:PutObject` pode trocar um arquivo. A condição barra a substituição na tabela, e o identificador com parte aleatória evita colisão no bucket. É um limite declarado: um defeito que removesse a condição não seria barrado pelo IAM. |
+| Projeto com barra, ou feito só de pontos, é recusado com 400 | Aceitar qualquer texto no projeto | O projeto vira pasta em `graficos/<projeto>/`: com `../fora`, o navegador normalizaria o caminho e o endereço do gráfico devolvido não abriria. Acento continua aceito. |
 | O que entra no log: data e hora, projeto e motivo de cada recusa ou falha, e o identificador de cada gravação | O corpo inteiro da requisição | O corpo traz o gráfico em base64 e textos livres: o log ficaria pesado e guardaria conteúdo que o RD-01 manda manter fora. Para investigar, basta saber quando, em que projeto e por quê. |
 | Rotas: `POST /experimentos`, `GET /experimentos?projeto=` e `GET /experimentos/{id}?projeto=` | Uma rota só, `GET /experimentos?projeto=&id=`, para a lista e para o detalhe | O caminho com o identificador separa a coleção de um item, que é onde quem já usou uma API espera achar cada coisa. O projeto continua obrigatório no detalhe porque a chave da tabela é projeto mais identificador (seção 6.2). |
 | O que a API devolve: 201 ao gravar; 400 dizendo o campo; 503 quando o gráfico ou a tabela não respondem; 200 com total 0 para projeto vazio; 404 para identificador que não existe no projeto | 404 também para projeto sem experimentos | Projeto vazio é uma resposta legítima: a pergunta foi respondida, e a resposta é "nenhum" (US-02, cenário 2). Identificador que não existe é erro de quem pediu (US-03, cenário 2). |

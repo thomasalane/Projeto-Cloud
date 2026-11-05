@@ -375,7 +375,7 @@ details.json pre { font-family: var(--mono); font-size: .78rem; background: var(
       </div>
       <div class="campo">
         <label for="d-id">Identificador</label>
-        <input type="text" id="d-id" class="mono" placeholder="20261028-140312-7f3a9c" autocomplete="off" spellcheck="false">
+        <input type="text" id="d-id" class="mono" placeholder="20261028-140312-123456-7f3a9c" autocomplete="off" spellcheck="false">
       </div>
       <button type="submit" class="botao">Abrir experimento</button>
     </form>
@@ -645,7 +645,8 @@ details.json pre { font-family: var(--mono); font-size: .78rem; background: var(
       ["f-modelo", "f-hiperparametros", "f-valor"].forEach((id) => ($("#" + id).value = ""));
       entradaArquivo.value = ""; mostrarArquivo();
     } else if (req.status === 400) {
-      (d.campos || []).forEach((c) => marcarErro(c, c === "valor" || c === "grafico" ? d.erro : "Preencha este campo."));
+      const ausente = d.erro === "campos obrigatórios ausentes";
+      (d.campos || []).forEach((c) => marcarErro(c, ausente ? "Preencha este campo." : d.erro));
       area.innerHTML = `<div class="retorno falha" role="alert"><h3>Registro recusado pela função gravar.</h3><p>${esc(d.erro)}</p><p>Nada foi gravado: nem gráfico no S3, nem experimento no DynamoDB. A recusa ficou anotada no CloudWatch Logs.</p></div>`;
       const primeiro = $("[aria-invalid=true]", form);
       if (primeiro) (primeiro.querySelector("input") || primeiro).focus();

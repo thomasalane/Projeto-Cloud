@@ -22,6 +22,7 @@ import sys
 import unicodedata
 import urllib.error
 import urllib.request
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -43,12 +44,17 @@ MESES_TESTE = 24
 
 # ------------------------------------------------------------------ dados
 def serie_bcb(codigo, quantidade=120):
-    """Série do Banco Central (SGS). Volta None se não houver internet."""
-    url = (f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados/ultimos/"
-           f"{quantidade}?formato=json")
+    """Série do Banco Central (SGS). Volta None se ele não responder.
+
+    Pede por período, e não "/ultimos/N": essa rota do SGS recusa N acima de 20.
+    """
+    hoje = date.today()
+    inicio = f"01/{hoje.month:02d}/{hoje.year - quantidade // 12}"
+    url = (f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados?formato=json"
+           f"&dataInicial={inicio}&dataFinal={hoje:%d/%m/%Y}")
     try:
         with urllib.request.urlopen(url, timeout=8) as r:
-            dados = json.load(r)
+            dados = json.load(r)[-quantidade:]
         datas = [d["data"][3:] for d in dados]  # "01/05/2024" -> "05/2024"
         valores = np.array([float(d["valor"]) for d in dados])
         return datas, valores
@@ -198,7 +204,7 @@ def main():
     ao_vivo = None
     for projeto, info in PROJETOS.items():
         serie = serie_bcb(info["codigo"])
-        fonte = f"Fonte: Banco Central, série SGS {info['codigo']}" if serie else "série ilustrativa (sem internet)"
+        fonte = f"Fonte: Banco Central, série SGS {info['codigo']}" if serie else "série ilustrativa (Banco Central indisponível)"
         datas, y = serie or serie_ilustrativa(info["tipo"])
         inicio = len(y) - MESES_TESTE
         print(f"\n▸ {projeto}: {len(y)} meses ({fonte}); teste nos últimos {MESES_TESTE}")

@@ -110,6 +110,8 @@ def ler_valor(bruto):
         texto = str(bruto).strip()
         if "," in texto and "." in texto:  # "1.234,5" e ambiguo
             return None
+        if "_" in texto:  # o Decimal aceitaria "1_000"; metrica nao se escreve assim
+            return None
         try:
             numero = Decimal(texto.replace(",", "."))  # FURPS U
         except InvalidOperation:
@@ -130,12 +132,13 @@ def lambda_handler(event, context):
     inicio = time.perf_counter()
 
     corpo = event.get("body") or "{}"
-    if event.get("isBase64Encoded"):
-        corpo = base64.b64decode(corpo).decode("utf-8")
     try:
+        if event.get("isBase64Encoded"):
+            corpo = base64.b64decode(corpo).decode("utf-8")
         # parse_float=Decimal: 0.412 vindo como numero nao passa por float
         dados = json.loads(corpo, parse_float=Decimal)
-    except json.JSONDecodeError:
+    except ValueError:
+        # binascii.Error, UnicodeDecodeError e JSONDecodeError sao ValueError
         dados = None
     if not isinstance(dados, dict):
         return recusar(trilha, inicio, None, "corpo não é JSON válido", ["corpo"])
@@ -151,6 +154,12 @@ def lambda_handler(event, context):
     if faltando:
         return recusar(trilha, inicio, projeto,
                        "campos obrigatórios ausentes", faltando)
+
+    # O projeto vira pasta no caminho do grafico: com barra, ou sendo so
+    # pontos, o endereco devolvido nao abriria (02-arquitetura, secao 9)
+    if "/" in projeto or "\\" in projeto or not projeto.strip("."):
+        return recusar(trilha, inicio, projeto,
+                       "o projeto não pode ter barra nem ser só pontos", ["projeto"])
 
     # RF-04 e US-01, cenario 2: "baixo" nao e numero
     valor = ler_valor(dados["valor"])

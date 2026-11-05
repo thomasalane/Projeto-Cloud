@@ -3,9 +3,10 @@
 #
 # O roteiro usa um papel so, com "Resource": "*". Aqui cada funcao tem
 # o seu papel, cada permissao nomeia o recurso exato deste projeto, e
-# nenhuma permite apagar ou alterar: e o que o RNF-02 promete, e o que
-# garante o RD-02 (experimento registrado nao se altera nem se apaga)
-# mesmo que o codigo tenha um defeito.
+# nenhuma e de exclusao ou atualizacao: e o que o RNF-02 promete. O
+# RD-02 (experimento registrado nao se altera nem se apaga) depende
+# disto E da condicao do put_item na funcao gravar: dynamodb:PutItem
+# substituiria um item de mesma chave (02-arquitetura, secao 9).
 #
 # Gravacao pode, e so pode:
 #   s3:PutObject          guardar o PNG em graficos/ do bucket
