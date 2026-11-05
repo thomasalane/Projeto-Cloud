@@ -1,0 +1,37 @@
+Medicoes do RNF-01 no LocalStack (bigdata-pro 2026.10.0), 05/11/2026,
+notebook Windows 11, Git Bash. Projeto medicao-rnf01, com 100 experimentos.
+
+# ./testes/medir.sh, primeira execucao (grava os 100 antes de medir)
+gravando 100 experimentos em medicao-rnf01...
+experimentos no projeto: 100
+amostras:    30
+minimo (s):  0.253717
+mediana (s): 0.273478
+p95 (s):     0.335462
+maximo (s):  0.353607
+RNF-01 cumprido: p95 de 335 ms, abaixo de 1.000 ms
+
+# ./testes/medir.sh, segunda execucao
+experimentos no projeto: 100
+amostras:    30
+minimo (s):  0.249468
+mediana (s): 0.266639
+p95 (s):     0.286360
+maximo (s):  2.766407
+RNF-01 cumprido: p95 de 286 ms, abaixo de 1.000 ms
+
+# medicao dentro de ./testes/executar.sh --do-zero (ver executar-do-zero-2026-11-05.txt)
+amostras:    30
+minimo (s):  0.258483
+mediana (s): 0.272597
+p95 (s):     1.839740
+maximo (s):  10.287771
+RNF-01 nao cumprido: p95 de 1839 ms, acima de 1.000 ms
+
+# sondagem: 60 consultas seguidas, comparando o tempo total da chamada
+# com o tempo do DynamoDB dentro da funcao (campo trilha da resposta)
+60 consultas: mediana 269 ms, p95 289 ms, max 2611 ms
+lentas (>1 s): total da chamada | tempo do DynamoDB dentro da funcao
+      2611 ms | 18.2 ms
+      1956 ms | 17.9 ms
+rapidas: DynamoDB mediana 18.8 ms

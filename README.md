@@ -15,7 +15,7 @@ O sistema roda inteiro no computador, sobre o **LocalStack** (emulador local da 
 | `app/`     | As funções `gravar` e `consultar`, e a página em `app/site/`                                    | 3 e 4  |
 | `eventos/` | Cargas de teste da função de gravação                                                          | 3      |
 | `dados/`   | Gerador de experimentos de exemplo para a demonstração (`semear.py`)                           | 4      |
-| `testes/`  | Testes automáticos derivados dos critérios de aceite (`executar.sh`)                           | 5      |
+| `testes/`  | Testes automáticos derivados dos critérios de aceite (`executar.sh`) e a medição do RNF-01 (`medir.sh`) | 5      |
 
 ## Estado atual
 
@@ -23,7 +23,7 @@ O sistema roda inteiro no computador, sobre o **LocalStack** (emulador local da 
 - [x] Sprint 2 — arquitetura e requisitos não funcionais: [`docs/02-arquitetura.md`](docs/02-arquitetura.md)
 - [x] Sprint 3 — armazenamento e função: bucket, tabela, papel e função `gravar`, por script
 - [x] Sprint 4 — API, página e publicação: função `consultar`, `openapi.yaml` no API Gateway e página no S3
-- [ ] Sprint 5 — validação: testes e relatório prontos em [`docs/03-validacao.md`](docs/03-validacao.md); falta a execução no LocalStack (seção 5 do relatório)
+- [x] Sprint 5 — validação: testes e medição no LocalStack, relatório em [`docs/03-validacao.md`](docs/03-validacao.md) e saídas em [`docs/evidencias/`](docs/evidencias/)
 
 ## Como subir o ambiente
 
@@ -107,9 +107,10 @@ Os testes automáticos conferem os critérios de aceite e os requisitos não fun
 ```bash
 ./testes/executar.sh            # testa o ambiente que está no ar
 ./testes/executar.sh --do-zero  # derruba tudo (apaga os dados), sobe do zero e testa
+./testes/medir.sh               # mede o p95 da lista com 100 experimentos (RNF-01)
 ```
 
-O resultado e o que cada teste cobre estão em [`docs/03-validacao.md`](docs/03-validacao.md).
+A suíte completa leva cerca de 8 minutos com `--do-zero`. O resultado e o que cada teste cobre estão em [`docs/03-validacao.md`](docs/03-validacao.md).
 
 ## Como derrubar
 

@@ -62,3 +62,4 @@ dados/graficos/
 # gerados pelos testes
 testes/.tmp-*/
 testes/ultima-execucao.txt
+testes/tempos.txt

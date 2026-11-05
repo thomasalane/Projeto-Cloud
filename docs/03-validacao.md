@@ -1,116 +1,197 @@
-# Relatório de Validação
+# Documento de Validação
 
 Projeto: Diário de Experimentos (`diario-de-experimentos`)  
-Sprint: 5, validação  
-Data: 04/11/2026  
+Cenário oficial escolhido: Ideia própria da equipe (Diário de Experimentos)  
+Data: 05/11/2026  
 Versão: 1.0
 
-## 1. O que foi validado, e onde
+Os números deste documento vêm de execuções reais no LocalStack (edição `bigdata-pro`, versão 2026.10.0), em um notebook Windows 11 pelo Git Bash, em 05/11/2026. As saídas completas estão em `docs/evidencias/`: `executar-do-zero-2026-11-05.txt`, a suíte inteira a partir do ambiente derrubado, e `medir-2026-11-05.txt`, as medições do RNF-01. As capturas de tela de cada sprint estão nos documentos de evidência da mesma pasta (E3.1 a E5.5).
 
-Os testes nascem dos documentos: os seis cenários BDD (`01-requisitos.md`, seção 5) e os quatro requisitos não funcionais (`02-arquitetura.md`, seção 1). Cada teste de `testes/executar.sh` leva o ID do que confere.
+## 1. Reconstrução do ambiente
 
-| Ambiente | O que ele prova | Situação |
-|----------|-----------------|----------|
-| Emulador de teste, com a biblioteca `moto` e um gateway local, fora do repositório | A lógica das funções, os scripts de `infra/`, o contrato da API e a página | Executado em 04/11/2026: seções 3 e 4 |
-| LocalStack, o ambiente oficial do projeto | Tudo acima no emulador da disciplina, e os tempos reais | **Pendente:** preencher a seção 5 |
+| Item | Resposta |
+|------|----------|
+| Tempo do `deploy.sh` a partir do ambiente vazio | 110 s e 119 s, em duas reconstruções do zero (`[DEMO] deploy.sh sobe tudo do zero`) |
+| Foi necessário algum comando fora do script | Não. Antes do deploy, só se sobe o emulador (`lstk start`), que não cria nenhum recurso do projeto |
+| Se sim, qual e por quê | Não se aplica: nenhum recurso foi criado fora de `infra/` |
 
-A máquina em que este relatório foi escrito não tem Docker, e o LocalStack depende dele. Por isso o emulador de teste fez o papel do LocalStack na primeira validação. **Os números de tempo da seção 4 não valem como medição do RNF-01:** sem contêiner, as Lambdas ali ficam mais rápidas do que no LocalStack.
+O ciclo foi o do Demoday: `destroy.sh` deixou 0 funções e 0 tabelas do projeto, o `deploy.sh` subiu bucket, tabela, papéis, funções, API e página com um comando, e um segundo `deploy.sh`, logo depois, terminou sem erro e sem perder nenhum experimento gravado. O `deploy.sh` termina aquecendo as duas funções, para a primeira pessoa na página não esperar a partida a frio.
 
-## 2. Como rodar
+## 2. Critérios de aceite executados
 
-Com o LocalStack no ar, no Git Bash:
+O `testes/executar.sh` traduz os seis critérios da Sprint 1 (`01-requisitos.md`, seção 5). Cada verificação leva o ID do que confere, e cada critério precisa de mais de uma, porque a frase afirma mais de uma coisa. Cada rodada usa projetos com sufixo único: como nada se apaga (RD-02), é assim que "projeto vazio" continua verdadeiro a cada execução.
 
-```bash
-./testes/executar.sh            # testa o ambiente que está no ar
-./testes/executar.sh --do-zero  # derruba tudo, sobe do zero, testa e faz o deploy de novo
+| #  | Cenário BDD, em uma linha | Como foi executado | Resultado |
+|----|---------------------------|--------------------|-----------|
+| C1 | US-01, cenário 1: registrar um ARIMA com RMSE 0,412 e gráfico devolve 1 identificador, o projeto passa a ter 1 experimento, 0,412 sem arredondar e o gráfico baixado tem o mesmo tamanho | `executar.sh`, 7 verificações `[US-01/1]` | passou |
+| C2 | US-01, cenário 2: "baixo" no valor é recusado, o projeto continua com 1 e 0 gráficos novos são guardados | `executar.sh`, 6 verificações `[US-01/2]` | passou |
+| C3 | US-02, cenário 1: a lista traz exatamente 3, na ordem Random Forest, SARIMA, ARIMA, e 0 do outro projeto | `executar.sh`, 4 verificações `[US-02/1]` | passou |
+| C4 | US-02, cenário 2: projeto sem experimentos responde com 0 e, no lugar da tabela, a mensagem e o convite | `executar.sh`, 4 verificações `[US-02/2]`, duas na API e duas na página publicada | passou |
+| C5 | US-03, cenário 1: abrir pelo identificador exibe 1 experimento, com hiperparâmetros idênticos, RMSE 0,385 e o endereço do gráfico | `executar.sh`, 4 verificações `[US-03/1]` | passou |
+| C6 | US-03, cenário 2: identificador que não pertence ao projeto responde não encontrado, com 0 experimentos e nenhum dado dos existentes | `executar.sh`, 5 verificações `[US-03/2]` | passou |
+
+### 2.1 Saída do script
+
+Os blocos dos seis critérios e a linha final; a saída inteira, com as 96 verificações, está em `docs/evidencias/executar-do-zero-2026-11-05.txt`.
+
+```text
+== US-01: registrar uma rodada
+  OK      [US-01/1] registro devolve 201
+  OK      [US-01/1] devolve 1 identificador
+  OK      [US-01/1] o valor volta sem arredondar
+  OK      [US-01/1] o projeto tem exatamente 1 experimento
+  OK      [US-01/1] a lista traz 0.412 exato
+  OK      [US-01/1] o grafico abre pelo endereco devolvido, sem credencial
+  OK      [US-01/1] o grafico baixado tem o mesmo tamanho em bytes
+  OK      [US-01/2] 'baixo' e recusado com 400
+  OK      [US-01/2] a resposta aponta o campo valor
+  OK      [US-01/2] a mensagem diz que precisa ser numerico
+  OK      [US-01/2] o projeto continua com exatamente 1
+  OK      [US-01/2] 0 graficos novos no bucket
+
+== US-02: lista do projeto
+  OK      [US-02/1] a lista traz exatamente 3
+  OK      [US-02/1] na ordem Random Forest, SARIMA, ARIMA
+  OK      [US-02/1] o outro projeto tem os seus 2
+  OK      [US-02/1] 0 experimentos do outro projeto na lista
+  OK      [US-02/2] projeto sem experimentos: 200 com total 0
+  OK      [US-02/2] a lista vem vazia
+
+== US-03: abrir um experimento
+  OK      [US-03/1] exibe exatamente 1 experimento
+  OK      [US-03/1] hiperparametros identicos aos digitados
+  OK      [US-03/1] RMSE 0.385
+  OK      [US-03/1] o endereco do grafico abre
+  OK      [US-03/2] identificador inexistente: 404
+  OK      [US-03/2] exibe 0 experimentos
+  OK      [US-03/2] nao mostra dados de nenhum existente
+  OK      [US-03/2] a mensagem diz nao encontrado no projeto
+  OK      [US-03/2] identificador de outro projeto: 404
+
+== Pagina publicada (US-01, US-02, US-03, RD-01)
+  OK      [US-02/2] a pagina traz a mensagem de projeto vazio
+  OK      [US-02/2] a pagina traz o convite para registrar o primeiro
+
+============================================
+Rodada t20261105-101527-13228 em 05/11/2026 10:23:49
+Ambiente: bigdata-pro 2026.10.0
+passaram: 95   falharam: 1   pulados: 0
+============================================
 ```
 
-O `--do-zero` **apaga os dados** e reproduz a condição do Demoday. Os testes precisam só de `curl`, do AWS CLI e de Python, sem biblioteca externa. O resumo fica na tela e em `testes/ultima-execucao.txt`; o código de saída é 0 se nada falhou.
+A única falha da rodada é a medição do RNF-01, explicada na seção 3.
 
-Cada rodada usa projetos com sufixo único. Como nada se apaga (RD-02), é assim que "projeto vazio" continua verdadeiro a cada rodada e que os testes não se misturam aos projetos da demonstração.
+### 2.2 Cenários não verificáveis por script
 
-## 3. Rastreabilidade
+Uma parte do C4 diz que a mensagem aparece **no lugar da tabela**. O script confere que a API responde 200 com total 0 e que a página publicada contém a mensagem e o convite, mas não renderiza a tela. Ver a mensagem no lugar da tabela é demonstração: está no roteiro da apresentação (`docs/roteiro-demo.md`, passo 3) e na captura da página (E4.2).
 
-| Item | O que é conferido | Teste | Emulador |
-|------|-------------------|-------|----------|
-| US-01, cenário 1 | 201, 1 identificador, exatamente 1 experimento, 0,412 sem arredondar, gráfico com o mesmo tamanho em bytes | `US-01/1` | Passou |
-| US-01, cenário 2 | "baixo" recusado com 400 apontando o valor, continua com 1, 0 gráficos novos | `US-01/2` | Passou |
-| US-02, cenário 1 | Exatamente 3, na ordem Random Forest, SARIMA, ARIMA, 0 do outro projeto | `US-02/1` | Passou |
-| US-02, cenário 2 | 200 com total 0, mensagem e convite no lugar da tabela | `US-02/2` | Passou |
-| US-03, cenário 1 | Exatamente 1, hiperparâmetros idênticos, RMSE 0,385, endereço do gráfico | `US-03/1` | Passou |
-| US-03, cenário 2 | 404, 0 experimentos, nenhum dado de outro | `US-03/2` | Passou |
-| RF-01 | Identificador novo a cada registro, data e hora em ISO 8601 | `RF-01` | Passou |
-| RF-02 | Gráfico guardado e aberto pelo endereço devolvido | `US-01/1`, `RNF-03` | Passou |
-| RF-03 | Só a partição do projeto, em ordem, com os campos pedidos, limite, consulta sem projeto | `RF-03`, `US-02/1` | Passou |
-| RF-04 | Cada campo ausente, valor inválido, gráfico inválido, corpo inválido; nada guardado | `RF-04` | Passou |
-| RF-05 | Experimento completo pelo projeto e pelo identificador | `US-03/1` | Passou |
-| RD-01 | Aviso no formulário publicado; o log não guarda o conteúdo enviado | `RD-01` | Passou |
-| RD-02 | A API não oferece PUT, PATCH nem DELETE; o experimento fica intacto; `put_item` condicional | `RD-02` | Passou |
-| RNF-01 | 100 experimentos, 30 requisições, p95 abaixo de 1.000 ms, `query` e não `scan` | `RNF-01` | Lógica passou; tempo pendente (seção 5) |
-| RNF-02 | Ações exatas de cada papel, recursos nomeados, um papel por função | `RNF-02` | Passou |
-| RNF-03 | Bucket fora do ar: 503 e nenhum experimento; todo experimento tem o seu arquivo | `RNF-03` | Passou |
-| RNF-04 | Linha com data, projeto e motivo, em até 10 s depois da resposta | `RNF-04` | Passou |
-| Demoday | `destroy.sh` limpa, `deploy.sh` sobe do zero, segundo deploy não perde dados | `DEMO` | Passou |
+O RD-01 diz que o gráfico não pode conter dado pessoal. Nenhum script sabe o que uma imagem mostra. O que é verificável foi verificado — o aviso está no formulário publicado (`[RD-01]`) e o log não guarda o conteúdo enviado (`[RD-01]`) —, e o resto é responsabilidade de quem anexa, declarada aqui como verificação humana.
 
-Para simular o bucket fora do ar sem apagar nada, o teste do RNF-03 aponta a função para um bucket inexistente e restaura a configuração em seguida, mesmo se o script for interrompido. O próprio `--do-zero` confere, no final, que ela voltou.
+## 3. Requisitos não funcionais medidos
 
-## 4. Resultados no emulador de teste
+| ID     | Valor declarado na Sprint 2 | Método | Valor obtido | Resultado |
+|--------|-----------------------------|--------|--------------|-----------|
+| RNF-01 | p95 < 1.000 ms, com 100 experimentos no projeto e 30 requisições seguidas | medição (`testes/medir.sh`) | p95 de 335 ms e 286 ms nas medições sozinhas, e 289 ms em uma sondagem de 60 chamadas; 2.854 ms e 1.839 ms nas medições feitas dentro da suíte completa | cumprido em parte |
+| RNF-02 | 0 permissões de exclusão ou atualização, 0 de escrita na consulta, só recursos do projeto | inspeção das políticas (`iam get-role-policy`, `[RNF-02]`) | gravação: `s3:PutObject`, `dynamodb:PutItem` e registro; consulta: `dynamodb:Query`, `dynamodb:GetItem` e registro; 0 `Delete*` ou `Update*`; todo recurso nomeado; um papel por função | cumprido |
+| RNF-03 | 0 experimentos sem gráfico, inclusive com o bucket fora do ar | demonstração (`[RNF-03]`) | com o bucket fora do ar, 503 e 0 experimentos registrados; com o bucket de volta, 201; 0 experimentos sem gráfico nos projetos de teste | cumprido |
+| RNF-04 | toda recusa no CloudWatch Logs em até 10 s, com data e hora, projeto e motivo | medição (`[RNF-04]`) | a linha apareceu em 3 s, nas duas rodadas, com data e hora, projeto e motivo, e sem o conteúdo enviado | cumprido |
 
-| Execução | Passaram | Falharam | Pulados |
-|----------|----------|----------|---------|
-| `executar.sh --do-zero` | 96 | 0 | 0 |
-| `executar.sh`, em seguida, sem derrubar nada | 90 | 0 | 0 |
-| Página no Microsoft Edge, nos dois endereços | 60 | 0 | 0 |
+### 3.1 Saída da medição
 
-A diferença entre 96 e 90 são os 6 testes da etapa `DEMO`, que só existem com o `--do-zero`.
+A primeira execução de `./testes/medir.sh`, que grava os 100 experimentos antes de medir:
 
-**A página.** Um script fora do repositório percorreu o roteiro da demonstração no navegador, nos dois endereços: lista, projeto vazio e convite, as recusas, o registro certo, a rodada nova no topo, o detalhe com o gráfico carregado, o identificador trocado, o mapa "Por trás da tela" e a largura de celular (390 px). O endereço de site estático tem origem diferente da API e, portanto, exercitou o CORS de verdade: nenhum erro no console.
+```text
+experimentos no projeto: 100
+amostras:    30
+minimo (s):  0.253717
+mediana (s): 0.273478
+p95 (s):     0.335462
+maximo (s):  0.353607
+RNF-01 cumprido: p95 de 335 ms, abaixo de 1.000 ms
+```
 
-**Os testes pegam defeito?** Para conferir que os testes não passam à toa, nove defeitos foram colocados de propósito em uma cópia descartável. Os nove foram apanhados.
+E a medição feita dentro da suíte completa, logo depois de ela gravar centenas de registros de teste:
 
-| Defeito colocado | Teste que falhou |
-|------------------|------------------|
-| Lista em ordem crescente | `US-02/1`, `RF-03` |
-| Valor arredondado para 2 casas | `US-01/1`, `US-03/1`, `RD-02` |
-| Modelo deixa de ser obrigatório | `RF-04` |
-| Falha no bucket responde 201 | `RNF-03` |
-| `dynamodb:DeleteItem` no papel da consulta | `RNF-02` |
-| Função para de registrar no log | `RNF-04` |
-| Aviso do RD-01 removido da página | `RD-01` |
-| Identificador inexistente responde 200 | `US-03/2` |
-| Busca deixa de normalizar o projeto | `02-arq s9` |
+```text
+amostras:    30
+minimo (s):  0.258483
+mediana (s): 0.272597
+p95 (s):     1.839740
+maximo (s):  10.287771
+RNF-01 nao cumprido: p95 de 1839 ms, acima de 1.000 ms
+```
 
-## 5. Execução no LocalStack
+A mediana é a mesma nas duas, perto de 270 ms. O que muda é a cauda: de vez em quando uma chamada leva de 2 a 10 s, e com 30 amostras bastam duas dessas para o p95 passar de 1.000 ms. Para saber onde está a demora, uma sondagem de 60 chamadas comparou o tempo total de cada uma com o tempo do DynamoDB dentro da função, que vem no campo `trilha` da resposta. Nas chamadas lentas, de 2.611 ms e 1.956 ms, o DynamoDB levou 18,2 ms e 17,9 ms — o mesmo que nas rápidas, cuja mediana foi 18,8 ms. A demora não está na consulta, nem na chave de partição: está no caminho entre o API Gateway e a função dentro do emulador. Nenhuma das chamadas lentas foi partida a frio.
 
-**Pendente.** Rodar `./testes/executar.sh --do-zero` e preencher com o que estiver em `testes/ultima-execucao.txt`.
+Por isso o resultado é "cumprido em parte". O desenho que sustenta o número — `query` em uma partição só, sem `scan` (`[RNF-01] a lista e um query na particao, sem scan`) — está confirmado, e o tempo da consulta é estável em torno de 18 ms. O número de ponta a ponta no emulador oscila, e em duas de cinco medições passou do prometido.
 
-| Item | Resultado |
-|------|-----------|
-| Data e versão do LocalStack | |
-| Passaram, falharam, pulados | |
-| Tempo do deploy do zero (Demoday) | |
-| RNF-01: p95, mediana e máximo | |
-| RNF-04: tempo até a linha aparecer | |
+### 3.2 Requisitos verificados por análise
 
-Se o endereço de site estático aparecer como pulado, a rede não resolveu o nome; é o caso que o endereço alternativo cobre.
+A segunda metade do RNF-01 — o tempo não cresce conforme outros projetos acumulam experimentos — foi verificada por análise. Ela depende de a consulta ler só a partição do projeto, e isso está confirmado: a trilha de cada resposta registra um `query` na partição, e a lista do projeto medido traz os seus 100 experimentos mesmo com centenas de outros registros de teste na tabela. Medir o efeito de verdade exigiria uma tabela com volume de produção, que o emulador num notebook não representa.
 
-## 6. Defeitos encontrados e corrigidos
+O RNF-02 foi verificado por inspeção, e não por teste de bloqueio: o emulador guarda as políticas, mas por padrão não as aplica. O que se confere é o que está escrito em cada política, que é o que o próprio requisito pede.
 
-| Defeito | Efeito | Correção |
-|---------|--------|----------|
-| `semear.py` pedia ao Banco Central os últimos 120 valores, e a rota recusa | Todo gráfico saía como "série ilustrativa (sem internet)", mesmo com internet | Pede por período; a série real voltou (119 e 120 meses) |
-| O roteiro fazia o deploy antes da apresentação | Contrariava o Demoday, que parte do ambiente derrubado | O deploy agora é a primeira parte da apresentação |
-| O RNF-02 e o roteiro diziam que nem um defeito no código reescreveria o histórico | Falso: `PutItem` substitui um item de mesma chave | Texto corrigido; o limite está declarado em `02-arquitetura.md`, seção 9 |
-| Corpo em base64 que não é UTF-8 | Exceção não tratada, em vez de 400 | Recusado com 400 |
-| Projeto com barra, como `../fora` | Registro aceito, com endereço de gráfico que não abriria | Recusado com 400 |
-| Valor `1_000` | Aceito como 1000 | Recusado com 400 |
-| Mensagem do campo projeto na página | Dizia "Preencha este campo." mesmo preenchido | Mostra o motivo da recusa |
-| Exemplo do identificador | Sem os microssegundos que o código gera | Documento e página corrigidos |
+## 4. Matriz de rastreabilidade
 
-## 7. Limites conhecidos
+| ID     | O que foi prometido | Como foi verificado | Evidência | Resultado |
+|--------|---------------------|---------------------|-----------|-----------|
+| RF-01  | Registrar o experimento, com identificador único e data e hora | teste automático | `[RF-01]`, `[US-01/1]` em `executar-do-zero-2026-11-05.txt`; E3.2 | cumprido |
+| RF-02  | Gráfico no S3, confirmando o registro só depois de guardado | teste automático e demonstração | `[US-01/1]` gráfico baixado com o mesmo tamanho; `[RNF-03]`; E3.2 | cumprido |
+| RF-03  | Lista do projeto, do mais recente ao mais antigo, com data, modelo, métrica, valor e identificador | teste automático | `[US-02/1]`, `[RF-03]`; E4.1 | cumprido |
+| RF-04  | Recusar registro incompleto ou com métrica não numérica, dizendo o campo | teste automático | `[RF-04]`, 19 verificações; `[US-01/2]` | cumprido |
+| RF-05  | Exibir um experimento completo pelo projeto e pelo identificador | teste automático | `[US-03/1]`, `[US-03/2]` | cumprido |
+| RNF-01 | Lista em menos de 1.000 ms no p95, com 100 experimentos | medição | seção 3.1; `medir-2026-11-05.txt`; E5.2 | cumprido em parte |
+| RNF-02 | Zero exclusão ou atualização, zero escrita na consulta, só recursos do projeto | inspeção | `[RNF-02]`; seção 3.2 | cumprido |
+| RNF-03 | Nenhum experimento sem gráfico, inclusive com o bucket fora do ar | demonstração | `[RNF-03]` | cumprido |
+| RNF-04 | Toda recusa no CloudWatch Logs em até 10 s | medição | `[RNF-04]` a linha apareceu em 3 s | cumprido |
+| US-01  | Registrar cada rodada com modelo, hiperparâmetros, métrica e gráfico | teste automático e demonstração na página | C1, C2; E3.2, E4.2 | cumprido |
+| US-02  | Ver todos os experimentos do projeto, do mais recente ao mais antigo | teste automático e demonstração na página | C3, C4; E4.2 | cumprido |
+| US-03  | Abrir um experimento com todos os hiperparâmetros e o gráfico | teste automático e demonstração na página | C5, C6; E4.2 | cumprido |
+| RD-01  | Gráfico e textos sem dado pessoal, com o aviso no formulário | teste automático e verificação humana | `[RD-01]` aviso publicado e log sem conteúdo; seção 2.2 | cumprido em parte |
+| RD-02  | Experimento registrado não se altera nem se apaga | teste automático e inspeção | `[RD-02]` a API não oferece PUT, PATCH nem DELETE, e o `put_item` é condicional | cumprido |
 
-- **IAM.** O emulador guarda a política, mas por padrão não a aplica. O RNF-02 é conferido pelo conteúdo da política, como o próprio requisito diz.
-- **Sobrescrita.** O IAM não distingue inserir de substituir. A proteção é a condição do `put_item`, no código (`02-arquitetura.md`, seção 9).
-- **Zeros à direita.** O DynamoDB guarda `0,4120` como `0.412`: o mesmo número, sem o último zero.
-- **Rodadas de teste.** Sem `--do-zero`, os projetos de teste ficam na tabela, porque nada se apaga. Eles têm prefixo `t<data>-` e somem no `destroy.sh`.
-- **Página.** O percurso no navegador não está em `testes/executar.sh`, para o projeto não depender de bibliotecas de automação. O `executar.sh` confere a página publicada e os seus textos; o percurso é o próprio roteiro da demonstração.
+### 4.1 Resumo
+
+| Resultado         | Quantidade |
+|-------------------|------------|
+| Cumprido          | 12         |
+| Cumprido em parte | 2          |
+| Não cumprido      | 0          |
+
+Os dois "em parte" estão explicados: o RNF-01, na seção 3.1, e o RD-01, na seção 2.2.
+
+## 7. O que não foi cumprido
+
+Nenhum item do backlog ficou sem implementação: os doze da Sprint 2 estão no ar e testados. Ficaram de fora, como a Sprint 2 já tinha declarado, a paginação da lista além dos 100 experimentos mais recentes e a ligação entre uma correção e o experimento corrigido.
+
+| Item | Por que ficou de fora | O que seria necessário para cumprir |
+|------|-----------------------|-------------------------------------|
+| RNF-01 em todas as medições | No emulador, algumas chamadas levam de 2 a 10 s entre o API Gateway e a função, embora a consulta leve 18 ms; em duas de cinco medições, o p95 passou de 1.000 ms | Medir na AWS real, que é o ambiente para o qual o número foi escrito; no emulador, repetir a medição e registrar a distribuição, e não um número só |
+| RD-01 por máquina | O sistema não tem como saber o que um gráfico mostra | Revisão humana do gráfico antes do registro, ou um classificador de imagem — os dois fora do recorte |
+| Paginação além de 100 experimentos | Declarada fora na Sprint 2: um projeto acumula dezenas de rodadas | Um parâmetro de continuação na API e na página |
+| Ligação entre correção e experimento corrigido | Declarada fora na Sprint 2 (Event Sourcing, seção 4.1) | Um campo opcional na gravação e o filtro na consulta |
+
+## 8. Fechamento
+
+### 8.1 O que funcionou melhor do que o esperado
+
+A chave de ordenação começando pela data e hora. Foi uma linha de decisão na Sprint 2 e não precisou de nenhuma linha de código de ordenação depois: o próprio banco devolve a lista do mais recente ao mais antigo, o teto de 100 itens pega os 100 mais recentes, e o critério US-02, cenário 1, passa sem que a função ordene nada.
+
+### 8.2 O que deu mais trabalho do que o esperado
+
+Fazer o mesmo sistema rodar igual em máquinas diferentes. O bash do Windows convertia caminhos que começam com `/`, trocava os acentos na saída e quebrava os scripts com fim de linha CRLF; a primeira chamada de uma função recém-criada estourava o tempo-limite e devolvia erro com o experimento já gravado; e o emulador dependeu da rede para validar a licença no dia da validação. Cada um virou uma linha no `config.sh` ou no `deploy.sh`, e nenhum deles estava em requisito nenhum.
+
+Os testes também deram trabalho do jeito certo: foram eles que acharam três defeitos que a Sprint 3 deixou passar — o valor `1_000` aceito como número, o corpo em base64 inválido derrubando a função com erro 500 e o projeto com barra gerando um endereço de gráfico que não abria.
+
+### 8.3 O que você faria diferente se recomeçasse
+
+Fecharia o formato da API no `openapi.yaml` antes de dividir o trabalho. Na Sprint 4, duas versões do sistema foram feitas em paralelo, com nomes de campo diferentes (`grafico` em uma, `grafico_base64` na outra) e respostas em formatos diferentes, e a página de uma não conversava com a API da outra. Com o contrato escrito primeiro, cada um teria construído a sua parte contra o mesmo arquivo, e a junção teria sido trocar um endereço, e não reescrever a página e a função de consulta.
+
+## 9. Repositório
+
+| Item | Resposta |
+|------|----------|
+| URL do repositório | https://github.com/thomasalane/Projeto-Cloud |
+| Número de commits | 11 |
+| Há pelo menos um commit por sprint | Sim: estrutura e requisitos (Sprint 1), arquitetura (Sprint 2), armazenamento e função (Sprint 3), API e página (Sprint 4) e validação (Sprint 5) |
+| Endereço do site depois do deploy | `http://diario-site.s3-website.localhost.localstack.cloud:4566/`, ou `http://localhost:4566/diario-site/index.html` quando a rede não resolve esse nome |

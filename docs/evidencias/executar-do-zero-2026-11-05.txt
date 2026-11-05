@@ -1,0 +1,136 @@
+== Demoday: do ambiente derrubado ao sistema no ar
+  OK      [DEMO] destroy.sh deixa 0 funcoes do projeto
+  OK      [DEMO] destroy.sh deixa 0 tabelas do projeto
+  OK      [DEMO] deploy.sh sobe tudo do zero em 119 s
+
+== US-01: registrar uma rodada
+  OK      [US-01/1] registro devolve 201
+  OK      [US-01/1] devolve 1 identificador
+  OK      [US-01/1] o valor volta sem arredondar
+  OK      [US-01/1] o projeto tem exatamente 1 experimento
+  OK      [US-01/1] a lista traz 0.412 exato
+  OK      [US-01/1] o grafico abre pelo endereco devolvido, sem credencial
+  OK      [US-01/1] o grafico baixado tem o mesmo tamanho em bytes
+  OK      [US-01/2] 'baixo' e recusado com 400
+  OK      [US-01/2] a resposta aponta o campo valor
+  OK      [US-01/2] a mensagem diz que precisa ser numerico
+  OK      [US-01/2] o projeto continua com exatamente 1
+  OK      [US-01/2] 0 graficos novos no bucket
+
+== RF-01 e RF-04: identificador, data e recusas
+  OK      [RF-01] cada registro gera um identificador novo
+  OK      [RF-01] a data e hora e gerada em ISO 8601
+  OK      [RF-04] sem projeto: 400 apontando o campo
+  OK      [RF-04] sem modelo: 400 apontando o campo
+  OK      [RF-04] sem metrica: 400 apontando o campo
+  OK      [RF-04] sem valor: 400 apontando o campo
+  OK      [RF-04] sem grafico: 400 apontando o campo
+  OK      [RF-04] modelo so com espacos conta como ausente
+  OK      [RF-04] valor 'NaN' e recusado
+  OK      [RF-04] valor 'Infinity' e recusado
+  OK      [RF-04] valor '1.234,5' e recusado
+  OK      [RF-04] valor '1_000' e recusado
+  OK      [RF-04] gráfico que nao e PNG e recusado
+  OK      [RF-04] grafico acima de 2 MB e recusado
+  OK      [RF-04] base64 invalido e recusado
+  OK      [RF-04] projeto com barra e recusado
+  OK      [RF-04] corpo que nao e JSON e recusado
+  OK      [RF-04] nenhuma recusa gravou experimento
+  OK      [RF-04] nenhuma recusa guardou grafico
+  OK      [FURPS-U] valor '0.412' vira 0.412
+  OK      [FURPS-U] valor '0,412' vira 0.412
+  OK      [FURPS-U] valor '-0,25' vira -0.25
+  OK      [FURPS-U] valor '0' vira 0
+  OK      [RF-04] hiperparametros sao opcionais
+
+== US-02: lista do projeto
+  OK      [US-02/1] a lista traz exatamente 3
+  OK      [US-02/1] na ordem Random Forest, SARIMA, ARIMA
+  OK      [RF-03] cada linha traz data, modelo, metrica, valor e identificador
+  OK      [US-02/1] o outro projeto tem os seus 2
+  OK      [US-02/1] 0 experimentos do outro projeto na lista
+  OK      [US-02/2] projeto sem experimentos: 200 com total 0
+  OK      [US-02/2] a lista vem vazia
+  OK      [02-arq s9] maiusculas na busca chegam ao mesmo projeto
+  OK      [RF-03] consulta sem projeto: 400
+  OK      [RF-03] limite que nao e numero: 400
+  OK      [RF-03] limite=2 devolve os 2 mais recentes
+
+== US-03: abrir um experimento
+  OK      [US-03/1] exibe exatamente 1 experimento
+  OK      [US-03/1] hiperparametros identicos aos digitados
+  OK      [US-03/1] RMSE 0.385
+  OK      [US-03/1] o endereco do grafico abre
+  OK      [US-03/2] identificador inexistente: 404
+  OK      [US-03/2] exibe 0 experimentos
+  OK      [US-03/2] nao mostra dados de nenhum existente
+  OK      [US-03/2] a mensagem diz nao encontrado no projeto
+  OK      [US-03/2] identificador de outro projeto: 404
+
+== RD-02: registrado nao se altera nem se apaga
+  OK      [RD-02] a API nao oferece PUT (respondeu 403)
+  OK      [RD-02] a API nao oferece PATCH (respondeu 403)
+  OK      [RD-02] a API nao oferece DELETE (respondeu 403)
+  OK      [RD-02] o experimento continua intacto
+  OK      [RD-02] o put_item so grava se o identificador nao existir
+
+== Funcao gravar direto (README)
+  OK      [US-01/2] o evento de teste eventos/gravar-valor-baixo.json e recusado
+  OK      [RF-04] corpo em base64 que nao e UTF-8 da 400, nao 500
+
+== RNF-04: recusa visivel no log em ate 10 s
+  OK      [RNF-04] a recusa de teste voltou 400
+  OK      [RNF-04] a linha apareceu em 3 s
+  OK      [RNF-04] a linha tem data e hora, projeto e motivo
+  OK      [RD-01] o log nao guarda o conteudo enviado
+
+== RNF-02: permissoes
+  OK      [RNF-02] gravar pode so: guardar grafico, inserir e registrar
+  OK      [RNF-02] consultar pode so: ler a tabela e registrar
+  OK      [RNF-02] diario-papel-gravar nomeia os recursos, sem '*' solto
+  OK      [RNF-02] diario-papel-consultar nomeia os recursos, sem '*' solto
+  OK      [RNF-02] cada funcao tem o seu papel
+  AVISO   [RNF-02] confere a politica anexada, como o requisito pede; o emulador nao a aplica por padrao
+
+== RNF-03: nenhum experimento sem grafico
+  OK      [RNF-03] com o bucket fora do ar, a gravacao responde 503
+  OK      [RNF-03] e nenhum experimento fica registrado
+  OK      [RNF-03] com o bucket de volta, a gravacao funciona
+  OK      [RNF-03] 0 experimentos sem grafico no bucket
+
+== RNF-01: lista com 100 experimentos, 30 requisicoes (testes/medir.sh)
+    gravando 100 experimentos em medicao-rnf01...
+    experimentos no projeto: 100
+    amostras:    30
+    minimo (s):  0.258483
+    mediana (s): 0.272597
+    p95 (s):     1.839740
+    maximo (s):  10.287771
+    RNF-01 nao cumprido: p95 de 1839 ms, acima de 1.000 ms
+  OK      [RNF-01] o projeto medido tem 100 experimentos
+  OK      [RNF-01] a lista e um query na particao, sem scan
+  OK      [RNF-01] foram 30 medicoes
+  FALHOU  [RNF-01] p95 abaixo de 1.000 ms  -> p95 1839 ms
+
+== Pagina publicada (US-01, US-02, US-03, RD-01)
+  OK      [US-02] a pagina responde no endereco alternativo
+  OK      [RD-01] o formulario traz o aviso de resultados agregados
+  OK      [US-02/2] a pagina traz a mensagem de projeto vazio
+  OK      [US-02/2] a pagina traz o convite para registrar o primeiro
+  OK      [02-arq 2.1] o config.js esta publicado
+  OK      [02-arq 2.1] o config.js aponta para a API no ar
+  OK      [02-arq 2.1] o config.js nao tem credencial
+  OK      [US-02] a pagina responde no endereco de site estatico
+  OK      [02-arq s9] a verificacao previa (OPTIONS) devolve os cabecalhos de CORS
+  OK      [02-arq s9] o OPTIONS libera o cabecalho Content-Type
+
+== Rodar o deploy de novo nao perde nada
+  OK      [DEMO] o segundo deploy termina sem erro
+  OK      [DEMO] os experimentos continuam la
+  OK      [DEMO] o RNF-03 nao deixou o bucket trocado na funcao
+
+============================================
+Rodada t20261105-101527-13228 em 05/11/2026 10:23:49
+Ambiente: bigdata-pro 2026.10.0
+passaram: 95   falharam: 1   pulados: 0
+============================================

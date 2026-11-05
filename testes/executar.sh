@@ -47,7 +47,7 @@ PASSOU=0; FALHOU=0; PULOU=0
 BUCKET_ORIGINAL_RESTAURAR=0
 
 dizer() { echo "$*" | tee -a "$TMP/saida.txt"; }
-passou() { PASSOU=$((PASSOU+1)); dizer "  PASSOU  [$1] $2"; }
+passou() { PASSOU=$((PASSOU+1)); dizer "  OK      [$1] $2"; }
 falhou() { FALHOU=$((FALHOU+1)); dizer "  FALHOU  [$1] $2${3:+  -> $3}"; }
 pulou()  { PULOU=$((PULOU+1));   dizer "  PULOU   [$1] $2${3:+  -> $3}"; }
 
@@ -170,7 +170,6 @@ P_CAMBIO="$RODADA-previsao-cambio"
 P_DESEMPREGO="$RODADA-previsao-desemprego"
 P_CAMPOS="$RODADA-campos"
 P_RECUSA="$RODADA-recusa"
-P_CARGA="$RODADA-carga"
 P_FALHA="$RODADA-falha"
 
 # ------------------------------------------------- US-01
@@ -404,34 +403,22 @@ done
 conferir "RNF-03" "0 experimentos sem grafico no bucket" "$SEM_GRAFICO" "0"
 
 # ------------------------------------------------- RNF-01
-dizer ""; dizer "== RNF-01: lista com 100 experimentos, 30 requisicoes (grava 100 rodadas: pode levar alguns minutos)"
-for N in $(seq 1 100); do
-  post "projeto=$P_CARGA" "modelo=m$N" "hiperparametros=rodada $N"
-  [ "$COD" = "201" ] || falhou "RNF-01" "semear a rodada $N" "status $COD"
-done
-get "/experimentos?projeto=$P_CARGA"
-conferir "RNF-01" "o projeto de carga tem 100 experimentos" "$(campo total)" "100"
+dizer ""; dizer "== RNF-01: lista com 100 experimentos, 30 requisicoes (testes/medir.sh)"
+# A medicao e a mesma do testes/medir.sh, que tambem roda sozinho (E5.2)
+./testes/medir.sh > "$TMP/medir.txt" 2>&1; MEDIU=$?
+sed 's/^/    /' "$TMP/medir.txt" | tee -a "$TMP/saida.txt"
+get "/experimentos?projeto=medicao-rnf01"
+conferir "RNF-01" "o projeto medido tem 100 experimentos" "$(campo total)" "100"
 case "$(campo trilha.1.acao)" in
   query*) passou "RNF-01" "a lista e um query na particao, sem scan" ;;
   *) falhou "RNF-01" "a lista e um query na particao, sem scan" "$(campo trilha.1.acao)" ;;
 esac
-: > "$TMP/tempos.txt"
-for N in $(seq 1 30); do
-  curl -s -m 60 -o /dev/null -w "%{time_total}\n" "$URL/experimentos?projeto=$P_CARGA" >> "$TMP/tempos.txt"
-done
-RESUMO=$("$PY" - "$TMP/tempos.txt" <<'EOF'
-import math, sys
-t = sorted(float(l.replace(",", ".")) * 1000 for l in open(sys.argv[1]) if l.strip())
-p95 = t[math.ceil(len(t) * .95) - 1]
-print(f"{p95:.0f} {t[len(t)//2]:.0f} {t[-1]:.0f} {len(t)}")
-EOF
-)
-read -r P95 MEDIANA MAXIMO QTD <<< "$RESUMO"
-conferir "RNF-01" "foram 30 medicoes" "$QTD" "30"
-if [ "$P95" -lt 1000 ]; then
-  passou "RNF-01" "p95 de ${P95} ms, abaixo de 1.000 ms (mediana ${MEDIANA} ms, maximo ${MAXIMO} ms)"
+conferir "RNF-01" "foram 30 medicoes" "$(sed -n 's/^amostras: *//p' "$TMP/medir.txt")" "30"
+P95=$(sed -n 's/^RNF-01 .*p95 de \([0-9]*\) ms.*/\1/p' "$TMP/medir.txt")
+if [ "$MEDIU" = "0" ]; then
+  passou "RNF-01" "p95 de ${P95} ms, abaixo de 1.000 ms"
 else
-  falhou "RNF-01" "p95 abaixo de 1.000 ms" "p95 ${P95} ms, mediana ${MEDIANA} ms, maximo ${MAXIMO} ms"
+  falhou "RNF-01" "p95 abaixo de 1.000 ms" "p95 ${P95:-?} ms"
 fi
 
 # ------------------------------------------------- pagina
@@ -492,7 +479,7 @@ try:
     d=json.load(sys.stdin); print(d.get('edition','?'),d.get('version','?'))
 except Exception:
     print('desconhecido')")"
-dizer "Passaram: $PASSOU | Falharam: $FALHOU | Pulados: $PULOU"
+dizer "passaram: $PASSOU   falharam: $FALHOU   pulados: $PULOU"
 dizer "============================================"
 cp "$TMP/saida.txt" "$SAIDA"
 [ "$FALHOU" = "0" ]
