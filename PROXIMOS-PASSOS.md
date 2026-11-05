@@ -87,6 +87,11 @@ E3.3:
 date
 ./infra/destroy.sh
 ./infra/deploy.sh
+```
+
+Espere o prompt voltar, sem limpar a tela, e só então cole o resto. No Terminal do Mac, a linha colada junto com o `deploy.sh` foi perdida e o comando não rodou:
+
+```bash
 lstk aws lambda invoke --function-name "$FUNCAO_GRAVAR" --payload fileb://eventos/gravar-ok.json saida.json
 cat saida.json
 ```
@@ -163,8 +168,9 @@ E5.3:
 date
 ./infra/destroy.sh
 time ./infra/deploy.sh
-./testes/executar.sh
 ```
+
+Espere o prompt voltar, sem limpar a tela, e só então rode `./testes/executar.sh`.
 
 E5.5, por último, depois de `git pull` e dos commits de todos:
 

@@ -11,7 +11,7 @@ Os números deste documento vêm de execuções reais no LocalStack (edição `b
 
 | Item | Resposta |
 |------|----------|
-| Tempo do `deploy.sh` a partir do ambiente vazio | 110 s e 119 s, em duas reconstruções do zero no notebook Windows, e 19 s no MacBook (`[DEMO] deploy.sh sobe tudo do zero`) |
+| Tempo do `deploy.sh` a partir do ambiente vazio | 110 s e 119 s, em duas reconstruções do zero no notebook Windows, e 19 s e 18,8 s no MacBook (`[DEMO] deploy.sh sobe tudo do zero` e E5.3) |
 | Foi necessário algum comando fora do script | Não. Antes do deploy, só se sobe o emulador (`lstk start`), que não cria nenhum recurso do projeto |
 | Se sim, qual e por quê | Não se aplica: nenhum recurso foi criado fora de `infra/` |
 
@@ -79,7 +79,7 @@ passaram: 95   falharam: 1   pulados: 0
 ============================================
 ```
 
-A única falha da rodada é a medição do RNF-01, explicada na seção 3. Na rodada do MacBook, as 96 verificações passaram: `passaram: 96   falharam: 0   pulados: 0`.
+A única falha da rodada é a medição do RNF-01, explicada na seção 3. Na rodada do MacBook, as 96 verificações passaram: `passaram: 96   falharam: 0   pulados: 0`. Sem `--do-zero`, como nas capturas E5.1 e E5.3, a suíte não roda as 6 verificações `[DEMO]` do ciclo de reconstrução: são 90, e as 90 passaram.
 
 ### 2.2 Cenários não verificáveis por script
 
@@ -91,7 +91,7 @@ O RD-01 diz que o gráfico não pode conter dado pessoal. Nenhum script sabe o q
 
 | ID     | Valor declarado na Sprint 2 | Método | Valor obtido | Resultado |
 |--------|-----------------------------|--------|--------------|-----------|
-| RNF-01 | p95 < 1.000 ms, com 100 experimentos no projeto e 30 requisições seguidas | medição (`testes/medir.sh`) | p95 de 335 ms e 286 ms nas medições sozinhas, e 289 ms em uma sondagem de 60 chamadas; 2.854 ms e 1.839 ms nas medições feitas dentro da suíte completa, todos no notebook Windows. No MacBook: 146 ms, 46 ms e 47 ms sozinhas, e 61 ms dentro da suíte | cumprido em parte |
+| RNF-01 | p95 < 1.000 ms, com 100 experimentos no projeto e 30 requisições seguidas | medição (`testes/medir.sh`) | p95 de 335 ms e 286 ms nas medições sozinhas, e 289 ms em uma sondagem de 60 chamadas; 2.854 ms e 1.839 ms nas medições feitas dentro da suíte completa, todos no notebook Windows. No MacBook: 146 ms, 46 ms, 47 ms e 49 ms (E5.2) sozinhas, e 61 ms, 61 ms (E5.1) e 37 ms (E5.3) dentro da suíte | cumprido em parte |
 | RNF-02 | 0 permissões de exclusão ou atualização, 0 de escrita na consulta, só recursos do projeto | inspeção das políticas (`iam get-role-policy`, `[RNF-02]`) | gravação: `s3:PutObject`, `dynamodb:PutItem` e registro; consulta: `dynamodb:Query`, `dynamodb:GetItem` e registro; 0 `Delete*` ou `Update*`; todo recurso nomeado; um papel por função | cumprido |
 | RNF-03 | 0 experimentos sem gráfico, inclusive com o bucket fora do ar | demonstração (`[RNF-03]`) | com o bucket fora do ar, 503 e 0 experimentos registrados; com o bucket de volta, 201; 0 experimentos sem gráfico nos projetos de teste | cumprido |
 | RNF-04 | toda recusa no CloudWatch Logs em até 10 s, com data e hora, projeto e motivo | medição (`[RNF-04]`) | a linha apareceu em 3 s, nas duas rodadas, com data e hora, projeto e motivo, e sem o conteúdo enviado | cumprido |
@@ -125,7 +125,7 @@ A mediana é a mesma nas duas, perto de 270 ms. O que muda é a cauda: de vez em
 
 Por isso o resultado é "cumprido em parte". O desenho que sustenta o número — `query` em uma partição só, sem `scan` (`[RNF-01] a lista e um query na particao, sem scan`) — está confirmado, e o tempo da consulta é estável em torno de 18 ms. O número de ponta a ponta no emulador oscila, e em duas de cinco medições no notebook Windows passou do prometido.
 
-No MacBook, nenhuma das quatro medições passou de 1.000 ms: o maior p95 foi 146 ms, e a mediana ficou entre 26 ms e 45 ms. A comparação mostra que o resultado depende do ambiente, mas não separa a causa, porque mudaram ao mesmo tempo o computador, o sistema operacional e a versão do emulador. Por isso, o resultado continua "cumprido em parte": o número só vale para o ambiente em que foi medido, e a AWS real não foi medida.
+No MacBook, nenhuma das sete medições passou de 1.000 ms: o maior p95 foi 146 ms, e a mediana ficou entre 24 ms e 45 ms. A comparação mostra que o resultado depende do ambiente, mas não separa a causa, porque mudaram ao mesmo tempo o computador, o sistema operacional e a versão do emulador. Por isso, o resultado continua "cumprido em parte": o número só vale para o ambiente em que foi medido, e a AWS real não foi medida.
 
 ### 3.2 Requisitos verificados por análise
 
@@ -202,7 +202,7 @@ Nenhum item do backlog ficou sem implementação: os doze da Sprint 2 estão no 
 
 | Item | Por que ficou de fora | O que seria necessário para cumprir |
 |------|-----------------------|-------------------------------------|
-| RNF-01 em todas as medições | No emulador, no notebook Windows, algumas chamadas levam de 2 a 10 s entre o API Gateway e a função, embora a consulta leve 18 ms; em duas de cinco medições, o p95 passou de 1.000 ms. No MacBook, nenhuma das quatro passou | Medir na AWS real, que é o ambiente para o qual o número foi escrito; no emulador, repetir a medição e registrar a distribuição, e não um número só |
+| RNF-01 em todas as medições | No emulador, no notebook Windows, algumas chamadas levam de 2 a 10 s entre o API Gateway e a função, embora a consulta leve 18 ms; em duas de cinco medições, o p95 passou de 1.000 ms. No MacBook, nenhuma das sete passou | Medir na AWS real, que é o ambiente para o qual o número foi escrito; no emulador, repetir a medição e registrar a distribuição, e não um número só |
 | RD-01 por máquina | O sistema não tem como saber o que um gráfico mostra | Revisão humana do gráfico antes do registro, ou um classificador de imagem — os dois fora do recorte |
 | Paginação além de 100 experimentos | Declarada fora na Sprint 2: um projeto acumula dezenas de rodadas | Um parâmetro de continuação na API e na página |
 | Ligação entre correção e experimento corrigido | Declarada fora na Sprint 2 (Event Sourcing, seção 4.1) | Um campo opcional na gravação e o filtro na consulta |
