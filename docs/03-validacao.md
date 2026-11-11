@@ -209,15 +209,15 @@ Fecharia o formato da API no `openapi.yaml` antes de dividir o trabalho. Na Spri
 | Item | Resposta |
 |------|----------|
 | URL do repositório | https://github.com/thomasalane/Projeto-Cloud |
-| Número de commits | 17, contando o que acrescenta este documento à versão final |
+| Número de commits | 18: os 17 da captura E5.5 e o que junta as capturas a este relatório |
 | Há pelo menos um commit por sprint | Sim: estrutura e requisitos (Sprint 1), arquitetura (Sprint 2), armazenamento e função (Sprint 3), API e página (Sprint 4) e validação (Sprint 5) |
 | Endereço do site depois do deploy | `http://diario-site.s3-website.localhost.localstack.cloud:4566/`, ou `http://localhost:4566/diario-site/index.html` quando a rede não resolve esse nome |
 
-Commits por integrante, pela saída de `git --no-pager shortlog -sn HEAD` em 11/11/2026, antes do commit deste documento:
+Commits por integrante, pela saída de `git --no-pager shortlog -sn HEAD` em 11/11/2026, na captura E5.5:
 
 | Integrante | Commits |
 |------------|---------|
-| Thomas Alane | 11 (10 pelo terminal, 1 pelo site do GitHub, como `thomasalane`) |
+| Thomas Alane | 12 (11 pelo terminal, 1 pelo site do GitHub, como `thomasalane`) |
 | Eduardo Palhares Reale Pereira | 4 |
 | Melina Pissolato | 1 |
 | Davi Araujo | 0 |
