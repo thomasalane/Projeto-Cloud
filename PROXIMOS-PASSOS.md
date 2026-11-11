@@ -1,6 +1,6 @@
 # Próximos passos para a entrega
 
-Estado em 05/11/2026: as cinco sprints estão no repositório e o projeto roda inteiro no LocalStack. A suíte `./testes/executar.sh --do-zero` passou em 95 de 96 verificações; a única falha é o p95 do RNF-01 na rodada completa, explicada em `docs/03-validacao.md`, seção 3.1. Em um MacBook, a mesma suíte passou em 96 de 96. Falta o que só a equipe pode fazer: os prints, a homologação cruzada e os commits de cada integrante.
+Estado em 05/11/2026: as cinco sprints estão no repositório e o projeto roda inteiro no LocalStack. A suíte `./testes/executar.sh --do-zero` passou em 95 de 96 verificações; a única falha é o p95 do RNF-01 na rodada completa, explicada em `docs/03-validacao.md`, seção 3.1. Em um MacBook, a mesma suíte passou em 96 de 96. Em 11/11/2026 os prints foram colados nos documentos de evidência e a homologação cruzada foi dispensada pela professora. Falta só o commit do Davi (seção 3).
 
 Apague este arquivo quando tudo abaixo estiver feito.
 
@@ -181,16 +181,15 @@ git --no-pager shortlog -sn HEAD
 
 ## 2. Homologação cruzada (E5.4)
 
-Obrigatória na Sprint 5:
+Dispensada pela professora: não é preciso fazer. O `docs/03-validacao.md` já registra a dispensa nas seções 5 e 6. O que o roteiro pedia, para referência:
 
 - **A outra equipe roda o nosso projeto** seguindo só o `README.md` e responde: conseguiu rodar só com o README? O que faltava? Os testes passaram? Alguma linha da matriz não bateu? Em que ponto travou?
 - **A nossa equipe roda o projeto dela** no nosso computador (comandos na E5.4) e responde as mesmas perguntas.
 
-Com as respostas, preencha no `docs/03-validacao.md` as seções **5. Homologação recebida** (com 5.1, o que foi corrigido depois) e **6. Homologação realizada**. Os quadros já estão lá, com `[preencher]` em cada campo; confira o formato com o Template 3, que não está no repositório. Nenhum `[preencher]` pode ficar na entrega.
 
 ## 3. Commits de cada integrante (E5.5)
 
-A E5.5 mostra os commits por pessoa (`git --no-pager shortlog -sn HEAD`). Hoje a Melina e o Davi não têm nenhum. Cada um pode fazer o commit do documento de evidências em que colou os próprios prints.
+A E5.5 mostra os commits por pessoa (`git --no-pager shortlog -sn HEAD`). Hoje o Davi não tem nenhum. Cada um pode fazer o commit do documento de evidências em que colou os próprios prints.
 
 ```bash
 git add docs/evidencias/evidencias-sprint4.docx

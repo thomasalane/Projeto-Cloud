@@ -5,7 +5,7 @@ Cenário oficial escolhido: Ideia própria da equipe (Diário de Experimentos)
 Data: 05/11/2026  
 Versão: 1.0
 
-Os números deste documento vêm de execuções reais no LocalStack (edição `bigdata-pro`, versão 2026.10.0), em um notebook Windows 11 pelo Git Bash, em 05/11/2026. As saídas completas estão em `docs/evidencias/`: `executar-do-zero-2026-11-05.txt`, a suíte inteira a partir do ambiente derrubado, e `medir-2026-11-05.txt`, as medições do RNF-01. A mesma suíte foi repetida no mesmo dia em um MacBook (Apple A18 Pro, 8 GB, macOS 27.0.1, LocalStack `pro` 2026.10.6), com as saídas em `executar-do-zero-mac-2026-11-05.txt` e `medir-mac-2026-11-05.txt`; as diferenças estão nas seções 1 e 3.1. As capturas de tela de cada sprint estão nos documentos de evidência da mesma pasta (E3.1 a E5.5).
+Os números deste documento vêm de execuções reais no LocalStack (edição `bigdata-pro`, versão 2026.10.0), em um notebook Windows 11 pelo Git Bash, em 05/11/2026. As saídas completas estão em `docs/evidencias/`: `executar-do-zero-2026-11-05.txt`, a suíte inteira a partir do ambiente derrubado, e `medir-2026-11-05.txt`, as medições do RNF-01. A mesma suíte foi repetida no mesmo dia em um MacBook (Apple A18 Pro, 8 GB, macOS 27.0.1, LocalStack `pro` 2026.10.6), com as saídas em `executar-do-zero-mac-2026-11-05.txt` e `medir-mac-2026-11-05.txt`; as diferenças estão nas seções 1 e 3.1. As capturas de tela de cada sprint estão nos documentos de evidência da mesma pasta (E3.1 a E5.5; a E5.4, da homologação cruzada, não se aplica, porque a professora a dispensou).
 
 ## 1. Reconstrução do ambiente
 
@@ -164,9 +164,9 @@ Os dois "em parte" estão explicados: o RNF-01, na seção 3.1, e o RD-01, na se
 
 ## 5. Homologação recebida
 
-Não realizada até a data deste documento. Não há registro de outra equipe que tenha clonado o repositório e rodado o projeto seguindo só o `README.md`, e por isso nenhuma resposta é apresentada aqui: respostas sem a homologação seriam inventadas. O item está declarado na seção 7.
+Dispensada pela professora da disciplina: não houve troca de repositórios com outra equipe, e por isso nenhuma resposta de outra equipe é apresentada aqui.
 
-O que mais se aproxima, sem substituí-la: o projeto foi reconstruído do zero em dois computadores diferentes da equipe, um notebook Windows e um MacBook, seguindo o `README.md`. No MacBook, as 96 verificações passaram; no notebook, 95 de 96, com a diferença explicada na seção 3.1. A configuração do Mac exigiu um ajuste no `infra/config.sh` (o zsh, shell padrão do Mac, não dividia o comando do AWS CLI em palavras), que foi corrigido e registrado no próprio arquivo.
+O que mais se aproxima, sem substituí-la, é a reconstrução em máquinas diferentes: o projeto foi reconstruído do zero em dois computadores diferentes da equipe, um notebook Windows e um MacBook, seguindo o `README.md`. No MacBook, as 96 verificações passaram; no notebook, 95 de 96, com a diferença explicada na seção 3.1. A configuração do Mac exigiu um ajuste no `infra/config.sh` (o zsh, shell padrão do Mac, não dividia o comando do AWS CLI em palavras), que foi corrigido e registrado no próprio arquivo.
 
 ### 5.1 O que foi corrigido depois
 
@@ -174,7 +174,7 @@ Não se aplica: sem homologação recebida, não houve apontamento de outra equi
 
 ## 6. Homologação realizada
 
-Não realizada até a data deste documento: não há registro de projeto de outra equipe rodado pela nossa (captura E5.4). O item está declarado na seção 7.
+Dispensada pela professora, como a homologação recebida (seção 5). A captura E5.4 não se aplica.
 
 ## 7. O que não foi cumprido
 
@@ -186,7 +186,6 @@ Nenhum item do backlog ficou sem implementação: os doze da Sprint 2 estão no 
 | RD-01 por máquina | O sistema não tem como saber o que um gráfico mostra | Revisão humana do gráfico antes do registro, ou um classificador de imagem — os dois fora do recorte |
 | Paginação além de 100 experimentos | Declarada fora na Sprint 2: um projeto acumula dezenas de rodadas | Um parâmetro de continuação na API e na página |
 | Ligação entre correção e experimento corrigido | Declarada fora na Sprint 2 (Event Sourcing, seção 4.1) | Um campo opcional na gravação e o filtro na consulta |
-| Homologação cruzada, recebida e realizada (seções 5 e 6) | Não houve troca de repositórios com outra equipe até a data deste documento | Trocar repositórios com outra equipe: ela segue só o nosso `README.md`, roda `./infra/deploy.sh` e `./testes/executar.sh` e confere três linhas da matriz; nós fazemos o mesmo com o dela e registramos a captura E5.4 |
 
 ## 8. Fechamento
 
@@ -209,7 +208,7 @@ Fecharia o formato da API no `openapi.yaml` antes de dividir o trabalho. Na Spri
 | Item | Resposta |
 |------|----------|
 | URL do repositório | https://github.com/thomasalane/Projeto-Cloud |
-| Número de commits | 18: os 17 da captura E5.5 e o que junta as capturas a este relatório |
+| Número de commits | 19: os 17 da captura E5.5, o que junta as capturas a este relatório e o que registra a dispensa da homologação cruzada |
 | Há pelo menos um commit por sprint | Sim: estrutura e requisitos (Sprint 1), arquitetura (Sprint 2), armazenamento e função (Sprint 3), API e página (Sprint 4) e validação (Sprint 5) |
 | Endereço do site depois do deploy | `http://diario-site.s3-website.localhost.localstack.cloud:4566/`, ou `http://localhost:4566/diario-site/index.html` quando a rede não resolve esse nome |
 
