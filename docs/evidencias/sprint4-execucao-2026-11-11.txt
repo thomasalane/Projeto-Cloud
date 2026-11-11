@@ -1,0 +1,100 @@
+# date
+Wed Nov 11 10:42:43     2026
+
+# ./infra/destroy.sh
+recursos removidos
+
+# time ./infra/deploy.sh
+bucket criado: diario-graficos
+leitura publica dos graficos aplicada
+tabela criada: diario-experimentos
+papel criado: diario-papel-gravar
+politica anexada ao papel diario-papel-gravar
+papel criado: diario-papel-consultar
+politica anexada ao papel diario-papel-consultar
+funcao criada: diario-gravar
+funcao pronta
+funcao criada: diario-consultar
+funcao pronta
+api criada: ojjidaetej
+api publicada em: http://localhost:4566/_aws/execute-api/ojjidaetej/dev
+bucket do site criado: diario-site
+pagina publicada em http://diario-site.s3-website.localhost.localstack.cloud:4566/
+consulta aquecida (respondeu 200)
+gravacao aquecida (respondeu 400)
+
+aplicacao no ar
+  api:     http://localhost:4566/_aws/execute-api/ojjidaetej/dev
+  pagina:  http://diario-site.s3-website.localhost.localstack.cloud:4566/
+  se a pagina nao abrir (rede sem esse DNS): http://localhost:4566/diario-site/index.html
+
+real	2m12.044s
+user	0m0.848s
+sys	0m1.036s
+
+# URL=$(cat infra/.url-api); echo "$URL"
+http://localhost:4566/_aws/execute-api/ojjidaetej/dev
+
+# curl -X POST $URL/experimentos  (modelo ARIMA; o campo trilha foi omitido aqui)
+{
+ "id_experimento": "20261111-134614-445968-1884e4",
+ "projeto": "previsao-inflacao",
+ "criado_em": "2026-11-11T13:46:14.445968+00:00",
+ "valor": "0.412",
+ "grafico": "http://localhost:4566/diario-graficos/graficos/previsao-inflacao/20261111-134614-445968-1884e4.png"
+}
+
+# curl -X POST $URL/experimentos  (modelo SARIMA; o campo trilha foi omitido aqui)
+{
+ "id_experimento": "20261111-134614-841190-a85772",
+ "projeto": "previsao-inflacao",
+ "criado_em": "2026-11-11T13:46:14.841190+00:00",
+ "valor": "0.412",
+ "grafico": "http://localhost:4566/diario-graficos/graficos/previsao-inflacao/20261111-134614-841190-a85772.png"
+}
+
+# curl $URL/experimentos?projeto=previsao-inflacao  (trilha omitida)
+{
+ "projeto": "previsao-inflacao",
+ "total": 2,
+ "experimentos": [
+  {
+   "id_experimento": "20261111-134614-841190-a85772",
+   "criado_em": "2026-11-11T13:46:14.841190+00:00",
+   "modelo": "SARIMA",
+   "metrica": "RMSE",
+   "valor": "0.412"
+  },
+  {
+   "id_experimento": "20261111-134614-445968-1884e4",
+   "criado_em": "2026-11-11T13:46:14.445968+00:00",
+   "modelo": "ARIMA",
+   "metrica": "RMSE",
+   "valor": "0.412"
+  }
+ ]
+}
+
+# curl -o /dev/null -w "%{http_code}" $URL/experimentos   (sem o projeto)
+400
+
+# date
+Wed Nov 11 10:46:16     2026
+
+# lambda list-functions
+[
+    "diario-gravar",
+    "diario-consultar"
+]
+
+# apigateway get-rest-apis
+[
+    [
+        "diario-api",
+        "ojjidaetej"
+    ]
+]
+
+# s3 ls (so os buckets do projeto, prefixo diario)
+2026-11-11 10:44:08 diario-graficos
+2026-11-11 10:46:00 diario-site
